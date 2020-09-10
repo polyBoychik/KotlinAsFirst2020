@@ -6,7 +6,6 @@ import lesson1.task1.discriminant
 import lesson1.task1.sqr
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.sqrt
 
 // Урок 2: ветвления (здесь), логический тип (см. 2.2).
@@ -73,7 +72,7 @@ fun minBiRoot(a: Double, b: Double, c: Double): Double {
  */
 fun ageDescription(age: Int): String = when (age % 10) {
     1 -> if (age / 10 % 10 == 1) "$age лет" else "$age год"
-    2, 3, 4 -> if (age / 10 % 10 == 1) "$age лет" else "$age года"
+    in 2..4 -> if (age / 10 % 10 == 1) "$age лет" else "$age года"
     else -> "$age лет"
 }
 
@@ -160,12 +159,12 @@ fun rookOrBishopThreatens(
  * прямоугольным (вернуть 1) или тупоугольным (вернуть 2).
  * Если такой треугольник не существует, вернуть -1.
  */
-fun triangleKind(a: Double, b: Double, c: Double): Int {
-    return if (a + b <= c || a + c <= b || b + c <= a)
+fun triangleKind(a: Double, b: Double, c: Double): Int =
+    if (a + b <= c || a + c <= b || b + c <= a)
         -1
     else {
-        val maxSide = max(a, max(b, c))
-        val minSide = min(a, min(b, c))
+        val maxSide = maxOf(a, b, c)
+        val minSide = minOf(a, b, c)
         val middleSide = a + b + c - maxSide - minSide
         when {
             sqr(maxSide) < sqr(middleSide) + sqr(minSide) -> 0
@@ -173,7 +172,6 @@ fun triangleKind(a: Double, b: Double, c: Double): Int {
             else -> 1
         }
     }
-}
 
 /**
  * Средняя (3 балла)
