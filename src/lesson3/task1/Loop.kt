@@ -2,7 +2,7 @@
 
 package lesson3.task1
 
-import kotlin.math.sqrt
+import kotlin.math.*
 
 // Урок 3: циклы
 // Максимальное количество баллов = 9
@@ -17,7 +17,7 @@ import kotlin.math.sqrt
 fun factorial(n: Int): Double {
     var result = 1.0
     for (i in 1..n) {
-        result = result * i // Please do not fix in master
+        result *= i // Please do not fix in master
     }
     return result
 }
@@ -72,7 +72,8 @@ fun digitCountInNumber(n: Int, m: Int): Int =
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun digitNumber(n: Int): Int = TODO()
+fun digitNumber(n: Int): Int =
+    ceil(abs(log10(abs(n) + 0.5))).toInt()
 
 /**
  * Простая (2 балла)
@@ -80,21 +81,41 @@ fun digitNumber(n: Int): Int = TODO()
  * Найти число Фибоначчи из ряда 1, 1, 2, 3, 5, 8, 13, 21, ... с номером n.
  * Ряд Фибоначчи определён следующим образом: fib(1) = 1, fib(2) = 1, fib(n+2) = fib(n) + fib(n+1)
  */
-fun fib(n: Int): Int = TODO()
+fun fib(n: Int): Int =
+    if (n in 1..2) 1
+    else fib(n - 1) + fib(n - 2)
 
 /**
  * Простая (2 балла)
  *
  * Для заданного числа n > 1 найти минимальный делитель, превышающий 1
  */
-fun minDivisor(n: Int): Int = TODO()
+fun minDivisor(n: Int): Int {
+    val sqrt = sqrt(n.toDouble()).toInt() + 1
+    if (n % 2 == 0)
+        return 2
+
+    var found = false
+
+    var i = 3
+    while (i <= sqrt && !found) {
+        if (n % i == 0) {
+            found = true
+            break
+        }
+        // Пропуск четных чисел
+        i += 2
+    }
+
+    return if (found) i else n
+}
 
 /**
  * Простая (2 балла)
  *
  * Для заданного числа n > 1 найти максимальный делитель, меньший n
  */
-fun maxDivisor(n: Int): Int = TODO()
+fun maxDivisor(n: Int): Int = n / minDivisor(n)
 
 /**
  * Простая (2 балла)
@@ -112,7 +133,35 @@ fun maxDivisor(n: Int): Int = TODO()
  * Написать функцию, которая находит, сколько шагов требуется для
  * этого для какого-либо начального X > 0.
  */
-fun collatzSteps(x: Int): Int = TODO()
+fun collatzSteps(x: Int): Int {
+    var steps = 0
+    var currentElement = x
+    while (currentElement > 1) {
+        if (currentElement % 2 == 0)
+            currentElement /= 2
+        else
+            currentElement = 3 * currentElement + 1
+
+        steps++
+    }
+    return steps
+}
+
+/**
+ * Возвращает наибольший общий делитель m и n
+ */
+fun gcd(m: Int, n: Int): Int {
+    var mutableM = m
+    var mutableN = n
+
+    while (mutableM != mutableN) {
+        if (mutableM > mutableN)
+            mutableM -= mutableN
+        else
+            mutableN -= mutableM
+    }
+    return mutableM
+}
 
 /**
  * Средняя (3 балла)
@@ -120,7 +169,7 @@ fun collatzSteps(x: Int): Int = TODO()
  * Для заданных чисел m и n найти наименьшее общее кратное, то есть,
  * минимальное число k, которое делится и на m и на n без остатка
  */
-fun lcm(m: Int, n: Int): Int = TODO()
+fun lcm(m: Int, n: Int): Int = m * n / gcd(m, n)
 
 /**
  * Средняя (3 балла)
@@ -129,7 +178,7 @@ fun lcm(m: Int, n: Int): Int = TODO()
  * Взаимно простые числа не имеют общих делителей, кроме 1.
  * Например, 25 и 49 взаимно простые, а 6 и 8 -- нет.
  */
-fun isCoPrime(m: Int, n: Int): Boolean = TODO()
+fun isCoPrime(m: Int, n: Int): Boolean = gcd(m, n) == 1
 
 /**
  * Средняя (3 балла)
@@ -138,7 +187,13 @@ fun isCoPrime(m: Int, n: Int): Boolean = TODO()
  * то есть, существует ли такое целое k, что m <= k*k <= n.
  * Например, для интервала 21..28 21 <= 5*5 <= 28, а для интервала 51..61 квадрата не существует.
  */
-fun squareBetweenExists(m: Int, n: Int): Boolean = TODO()
+fun squareBetweenExists(m: Int, n: Int): Boolean {
+    val minSqrt = ceil(sqrt(m.toDouble())).toInt()
+    val maxSqrt = floor(sqrt(n.toDouble())).toInt()
+
+    return maxSqrt - minSqrt >= 0
+
+}
 
 /**
  * Средняя (3 балла)
@@ -147,7 +202,17 @@ fun squareBetweenExists(m: Int, n: Int): Boolean = TODO()
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun revert(n: Int): Int = TODO()
+fun revert(n: Int): Int {
+    var result = 0
+    var mutableN = n
+
+    while (mutableN > 0) {
+        result *= 10
+        result += mutableN % 10
+        mutableN /= 10
+    }
+    return result
+}
 
 /**
  * Средняя (3 балла)
@@ -158,7 +223,14 @@ fun revert(n: Int): Int = TODO()
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun isPalindrome(n: Int): Boolean = TODO()
+fun isPalindrome(n: Int): Boolean {
+    val digitNum = digitNumber(n)
+    for (i in 0 until digitNum) {
+        if (n / pow(10, i) % 10 != n / pow(10, digitNum - i - 1) % 10)
+            return false
+    }
+    return true
+}
 
 /**
  * Средняя (3 балла)
@@ -168,7 +240,18 @@ fun isPalindrome(n: Int): Boolean = TODO()
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun hasDifferentDigits(n: Int): Boolean = TODO()
+fun hasDifferentDigits(n: Int): Boolean {
+    val rightDigit = n % 10
+    // n без правой цифры, т.к. поиск отличной цифры происходит относительно этой цифры
+    var mutableN = n / 10
+    while (mutableN > 0) {
+        if (mutableN % 10 != rightDigit)
+            return true
+        mutableN /= 10
+    }
+
+    return false
+}
 
 /**
  * Средняя (4 балла)
@@ -179,7 +262,31 @@ fun hasDifferentDigits(n: Int): Boolean = TODO()
  * Подумайте, как добиться более быстрой сходимости ряда при больших значениях x.
  * Использовать kotlin.math.sin и другие стандартные реализации функции синуса в этой задаче запрещается.
  */
-fun sin(x: Double, eps: Double): Double = TODO()
+fun sin(x: Double, eps: Double): Double {
+    var mutableX = x
+    while (mutableX >= 2 * PI) {
+        mutableX -= 2 * PI
+    }
+    while (mutableX <= -2 * PI) {
+        mutableX += 2 * PI
+    }
+
+    val sqrX = mutableX * mutableX
+
+    var a: Double = mutableX
+    var factorialBase = 1
+
+    var sinx = 0.0
+
+    do {
+        sinx += a
+
+        a *= -1.0 * sqrX / (2 * factorialBase) / (2 * factorialBase + 1)
+        factorialBase += 1
+
+    } while (abs(a) >= eps)
+    return sinx
+}
 
 /**
  * Средняя (4 балла)
@@ -190,7 +297,31 @@ fun sin(x: Double, eps: Double): Double = TODO()
  * Подумайте, как добиться более быстрой сходимости ряда при больших значениях x.
  * Использовать kotlin.math.cos и другие стандартные реализации функции косинуса в этой задаче запрещается.
  */
-fun cos(x: Double, eps: Double): Double = TODO()
+fun cos(x: Double, eps: Double): Double {
+    var mutableX = x
+    while (mutableX >= 2 * PI) {
+        mutableX -= 2 * PI
+    }
+    while (mutableX <= -2 * PI) {
+        mutableX += 2 * PI
+    }
+
+    val sqrX = mutableX * mutableX
+
+    var a = 1.0
+    var factorialBase = 1
+
+    var cosx = 0.0
+
+    do {
+        cosx += a
+
+        a *= -1.0 * sqrX / (2 * factorialBase - 1) / (2 * factorialBase)
+        factorialBase += 1
+
+    } while (abs(a) >= eps)
+    return cosx
+}
 
 /**
  * Сложная (4 балла)
@@ -201,7 +332,40 @@ fun cos(x: Double, eps: Double): Double = TODO()
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun squareSequenceDigit(n: Int): Int = TODO()
+fun squareSequenceDigit(n: Int): Int {
+    var digit = 0
+    var base = 1
+
+    var sqr = 1
+    var sqrDigitsNum = 1
+
+    while (digit + sqrDigitsNum < n) {
+        digit += sqrDigitsNum
+
+        base++
+        sqr = base * base
+        sqrDigitsNum = digitNumber(sqr)
+    }
+    return when (digit + sqrDigitsNum) {
+        n -> sqr % 10
+        else -> sqr / pow(10, digit + sqrDigitsNum - n) % 10
+    }
+}
+
+/**
+ * Возводит целое base в целую неотрицательную степень n
+ */
+fun pow(base: Int, power: Int): Int {
+    if (power == 0)
+        return 1
+    var res: Int = base
+    var needPower = power
+    while (needPower > 1) {
+        res *= base
+        needPower--
+    }
+    return res
+}
 
 /**
  * Сложная (5 баллов)
@@ -212,4 +376,26 @@ fun squareSequenceDigit(n: Int): Int = TODO()
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun fibSequenceDigit(n: Int): Int = TODO()
+fun fibSequenceDigit(n: Int): Int {
+    var digit = 0
+
+    // fib2 на момент инициализации - первый член последовательности Фибоначчи
+    var fib1 = 0
+    var fib2 = 1
+
+    var fibDigitsNum = 1
+
+    while (digit + fibDigitsNum < n) {
+        digit += fibDigitsNum
+
+        val fib = fib1 + fib2
+        fib1 = fib2
+        fib2 = fib
+
+        fibDigitsNum = digitNumber(fib2)
+    }
+    return when (digit + fibDigitsNum) {
+        n -> fib2 % 10
+        else -> fib2 / pow(10, digit + fibDigitsNum - n) % 10
+    }
+}
