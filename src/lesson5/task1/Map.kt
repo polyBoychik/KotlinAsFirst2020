@@ -154,7 +154,7 @@ fun subtractOf(a: MutableMap<String, String>, b: Map<String, String>) {
  * В выходном списке не должно быть повторяюихся элементов,
  * т. е. whoAreInBoth(listOf("Марат", "Семён, "Марат"), listOf("Марат", "Марат")) == listOf("Марат")
  */
-fun whoAreInBoth(a: List<String>, b: List<String>): List<String> = a.filter { it in b }
+fun whoAreInBoth(a: List<String>, b: List<String>): List<String> = a.toSet().filter { it in b }
 
 /**
  * Средняя (3 балла)
@@ -179,7 +179,7 @@ fun mergePhoneBooks(mapA: Map<String, String>, mapB: Map<String, String>): Map<S
 
     for ((key, value) in mapB) {
         if (mergedMap.containsKey(key)) {
-            if (value !in mergedMap[key]!!)
+            if (value != mergedMap[key]!!)
                 mergedMap[key] += ", $value"
         } else
             mergedMap[key] = value

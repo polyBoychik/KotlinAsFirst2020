@@ -267,9 +267,14 @@ fun convert(n: Int, base: Int): List<Int> {
     var number = n
     val result = mutableListOf<Int>()
 
-    while (number >= 1) {
-        result.add(0, number % base)
-        number /= base
+    if (number == 0) {
+        result.add(0)
+    } else {
+
+        while (number >= 1) {
+            result.add(0, number % base)
+            number /= base
+        }
     }
     return result
 }
@@ -286,9 +291,10 @@ fun convert(n: Int, base: Int): List<Int> {
  * (например, n.toString(base) и подобные), запрещается.
  */
 fun convertToString(n: Int, base: Int): String =
-    convert(n, base).joinToString(separator = "") {
-        if (it >= 10) (it - 10 + 'a'.toInt()).toChar().toString() else it.toString()
-    }
+    if (n == 0) "0" else
+        convert(n, base).joinToString(separator = "") {
+            if (it >= 10) (it - 10 + 'a'.toInt()).toChar().toString() else it.toString()
+        }
 
 /**
  * Средняя (3 балла)
@@ -473,12 +479,14 @@ fun russian(n: Int): String {
 
     // 100..999
     if (digits.size > 2 && digits[2] >= 1) {
-        result += hundreds[digits[2]] + " "
+        result += hundreds[digits[2]]
+        if (digits[1] > 0 || digits[0] > 0) result += " "
     }
 
     // 10, 20..99
     if (digits.size > 1 && (digits[1] > 1 || digits[1] == 1 && digits[0] == 0)) {
-        result += tens[digits[1]] + " "
+        result += tens[digits[1]]
+        if (digits[0] > 0) result += " "
     }
 
     // 1..9, 11..19
