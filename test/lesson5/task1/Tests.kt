@@ -147,6 +147,12 @@ class Tests {
             emptyList<String>(),
             whoAreInBoth(emptyList(), emptyList())
         )
+
+        assertEquals(
+            listOf(""),
+            whoAreInBoth(listOf("", ""), listOf(""))
+        )
+
         assertEquals(
             listOf("Marat"),
             whoAreInBoth(listOf("Marat", "Mikhail"), listOf("Marat", "Kirill"))
@@ -167,6 +173,15 @@ class Tests {
                 mapOf("Emergency" to "112")
             )
         )
+
+        assertEquals(
+            mapOf("" to "O\\\"oId~s&4\\\\!Gqgs;U{AA=3~\\\"%8;hfnPJp?N\\\"`z=C3}vSrkg>k<\\\",G%\\tx'dP7GkA@t^/!|u>i\$U{dTCV{=c@^|\\tJO6pP!=H0yi+pC.7(]V@A]AZJp+n3, "),
+            mergePhoneBooks(
+                mapOf("" to "O\\\"oId~s&4\\\\!Gqgs;U{AA=3~\\\"%8;hfnPJp?N\\\"`z=C3}vSrkg>k<\\\",G%\\tx'dP7GkA@t^/!|u>i\$U{dTCV{=c@^|\\tJO6pP!=H0yi+pC.7(]V@A]AZJp+n3"),
+                mapOf("" to "")
+            )
+        )
+
         assertEquals(
             mapOf("Emergency" to "112", "Police" to "02"),
             mergePhoneBooks(
@@ -322,6 +337,20 @@ class Tests {
     @Tag("8")
     fun bagPacking() {
         assertEquals(
+            setOf("Кубок", "Слиток"),
+            bagPacking(
+                mapOf("Кубок" to (500 to 2000), "Слиток" to (750 to 5000), "Книга" to (600 to 2000)),
+                1500
+            )
+        )
+        assertEquals(
+            setOf("Кубок", "Слиток"),
+            bagPacking(
+                mapOf("Кубок" to (500 to 2000), "Слиток" to (1000 to 5000)),
+                1500
+            )
+        )
+        assertEquals(
             setOf("Кубок"),
             bagPacking(
                 mapOf("Кубок" to (500 to 2000), "Слиток" to (1000 to 5000)),
@@ -335,5 +364,27 @@ class Tests {
                 450
             )
         )
+
+        assertEquals(
+            setOf("Гитара", "Ноутбук"),
+            bagPacking(
+                mapOf("Магнитофон" to (4 to 3000), "Ноутбук" to (3 to 2000), "Гитара" to (1 to 1500)),
+                4
+            )
+        )
+
+        assertEquals(
+            setOf("Ноутбук", "iPhone"),
+            bagPacking(
+                mapOf(
+                    "Магнитофон" to (4 to 3000),
+                    "Ноутбук" to (3 to 2000),
+                    "Гитара" to (1 to 1500),
+                    "iPhone" to (1 to 2000)
+                ),
+                4
+            )
+        )
+
     }
 }

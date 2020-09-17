@@ -4,8 +4,6 @@ package lesson4.task1
 
 import lesson1.task1.discriminant
 import lesson1.task1.sqr
-import lesson3.task1.digitNumber
-import lesson3.task1.pow
 import kotlin.math.sqrt
 
 // Урок 4: списки
@@ -134,13 +132,7 @@ fun abs(v: List<Double>): Double {
  *
  * Рассчитать среднее арифметическое элементов списка list. Вернуть 0.0, если список пуст
  */
-fun mean(list: List<Double>): Double {
-    // А можно так?  ... = if (list.isNotEmpty) list.average() else 0.0
-
-    var sum = 0.0
-    list.forEach { sum += it }
-    return if (list.isNotEmpty()) sum / list.size else 0.0
-}
+fun mean(list: List<Double>) = if (list.isNotEmpty()) list.average() else 0.0
 
 /**
  * Средняя (3 балла)
@@ -151,12 +143,10 @@ fun mean(list: List<Double>): Double {
  * Обратите внимание, что данная функция должна изменять содержание списка list, а не его копии.
  */
 fun center(list: MutableList<Double>): MutableList<Double> {
-    if (list.isNotEmpty()) {
-        val mean = mean(list)
+    val mean = mean(list)
 
-        for (i in 0 until list.size) {
-            list[i] -= mean
-        }
+    for (i in 0 until list.size) {
+        list[i] -= mean
     }
     return list
 }
@@ -186,16 +176,13 @@ fun times(a: List<Int>, b: List<Int>): Int {
  * Значение пустого многочлена равно 0 при любом x.
  */
 fun polynom(p: List<Int>, x: Int): Int {
-    var value: Int
+    var value = 0
     if (p.isNotEmpty()) {
         value = p.last()
 
         for (i in p.size - 2 downTo 0) {
             value = value * x + p[i]
         }
-        return value
-    } else {
-        value = 0
     }
     return value
 }
@@ -211,14 +198,9 @@ fun polynom(p: List<Int>, x: Int): Int {
  * Обратите внимание, что данная функция должна изменять содержание списка list, а не его копии.
  */
 fun accumulate(list: MutableList<Int>): MutableList<Int> {
-    if (list.isNotEmpty()) {
-        var accumulatedSum = list[0]
-        for (i in 1 until list.size) {
-            val current = list[i]
-            list[i] += accumulatedSum
-            accumulatedSum += current
-        }
-    }
+    if (list.isNotEmpty())
+        list.foldIndexed(0) { index, sum, value -> list[index] += sum; sum + value }
+
     return list
 }
 
@@ -272,11 +254,11 @@ fun convert(n: Int, base: Int): List<Int> {
     } else {
 
         while (number >= 1) {
-            result.add(0, number % base)
+            result.add(number % base)
             number /= base
         }
     }
-    return result
+    return result.reversed()
 }
 
 /**
@@ -343,69 +325,16 @@ fun roman(n: Int): String {
     var mutableN = n
     var result = ""
 
-    while (mutableN >= 1000) {
-        result += "M"
-        mutableN -= 1000
-    }
+    val interpreter = mapOf(
+        1000 to "M", 900 to "CM", 500 to "D", 400 to "CD", 100 to "C", 90 to "XC",
+        50 to "L", 40 to "XL", 10 to "X", 9 to "IX", 5 to "V", 4 to "IV", 1 to "I"
+    )
 
-    if (mutableN >= 900) {
-        result += "CM"
-        mutableN -= 900
-    }
-
-    while (mutableN >= 500) {
-        result += "D"
-        mutableN -= 500
-    }
-
-    if (mutableN >= 400) {
-        result += "CD"
-        mutableN -= 400
-    }
-
-    while (mutableN >= 100) {
-        result += "C"
-        mutableN -= 100
-    }
-
-    if (mutableN >= 90) {
-        result += "XC"
-        mutableN -= 90
-    }
-
-    while (mutableN >= 50) {
-        result += "L"
-        mutableN -= 50
-    }
-
-    if (mutableN >= 40) {
-        result += "XL"
-        mutableN -= 40
-    }
-
-    while (mutableN >= 10) {
-        result += "X"
-        mutableN -= 10
-    }
-
-    if (mutableN >= 9) {
-        result += "IX"
-        mutableN -= 9
-    }
-
-    while (mutableN >= 5) {
-        result += "V"
-        mutableN -= 5
-    }
-
-    if (mutableN >= 4) {
-        result += "IV"
-        mutableN -= 4
-    }
-
-    while (mutableN >= 1) {
-        result += "I"
-        mutableN -= 1
+    for ((arabic, roman) in interpreter) {
+        while (mutableN >= arabic) {
+            result += roman
+            mutableN -= arabic
+        }
     }
     return result
 }

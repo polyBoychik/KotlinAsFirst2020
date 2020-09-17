@@ -2,8 +2,6 @@
 
 package lesson5.task1
 
-import kotlin.math.min
-
 // Урок 5: ассоциативные массивы и множества
 // Максимальное количество баллов = 14
 // Рекомендуемое количество баллов = 9
@@ -207,13 +205,13 @@ fun averageStockPrice(stockPrices: List<Pair<String, Double>>): Map<String, Doub
             stockCount[stock] = 1
             averageStockPrice[stock] = price
         } else {
-            stockCount[stock] = stockCount[stock]!!.inc()
-            averageStockPrice[stock] = averageStockPrice[stock]!!.plus(price)
+            stockCount[stock] = stockCount[stock]!! + 1
+            averageStockPrice[stock] = averageStockPrice[stock]!! + price
         }
 
     }
     for ((stock, price) in stockCount)
-        averageStockPrice[stock] = averageStockPrice[stock]!!.div(price)
+        averageStockPrice[stock] = averageStockPrice[stock]!! / price
     return averageStockPrice
 }
 
@@ -280,15 +278,10 @@ fun canBuildFrom(chars: List<Char>, word: String): Boolean =
 fun extractRepeats(list: List<String>): Map<String, Int> {
     val repeats = mutableMapOf<String, Int>()
 
-    val uniqElements = list.toSet()
+    for (elem in list)
+        repeats[elem] = if (!repeats.containsKey(elem)) 1 else repeats[elem]!! + 1
 
-    for (elem in uniqElements) {
-        val count = list.count { it == elem }
-        if (count >= 2)
-            repeats[elem] = count
-    }
-
-    return repeats
+    return repeats.filter { it.value > 1 }
 }
 
 /**
@@ -304,13 +297,9 @@ fun extractRepeats(list: List<String>): Map<String, Int> {
  *   hasAnagrams(listOf("тор", "свет", "рот")) -> true
  */
 fun hasAnagrams(words: List<String>): Boolean {
-    for (i in words.indices) {
-        for (j in i + 1 until words.size) {
-            if (words[i].length == words[j].length && words[i].toSet() == words[j].toSet())
-                return true
-        }
-    }
-    return false
+    val word = mutableSetOf<Set<Char>>()
+    words.toMutableSet().forEach { word += it.toSet() }
+    return word.size != words.size
 }
 
 /**
@@ -347,7 +336,30 @@ fun hasAnagrams(words: List<String>): Boolean {
  *          "GoodGnome" to setOf()
  *        )
  */
-fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<String>> = TODO()
+fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<String>> {
+    val extendedFriends = mutableMapOf<String, MutableSet<String>>()
+
+    for ((key, value) in friends) {
+        if (!extendedFriends.containsKey(key)) {
+            extendedFriends[key] = mutableSetOf()
+        }
+        extendedFriends[key]!!.addAll(value)
+
+        for (name in value) {
+            if (!extendedFriends.containsKey(name)) {
+                extendedFriends[name] = mutableSetOf()
+            }
+        }
+    }
+
+    for ((key, value) in extendedFriends) {
+        for (name in value) {
+            extendedFriends[key]!!.addAll(extendedFriends[name]!!.minus(key))
+        }
+    }
+
+    return extendedFriends
+}
 
 /**
  * Сложная (6 баллов)
@@ -366,7 +378,15 @@ fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<Stri
  *   findSumOfTwo(listOf(1, 2, 3), 4) -> Pair(0, 2)
  *   findSumOfTwo(listOf(1, 2, 3), 6) -> Pair(-1, -1)
  */
-fun findSumOfTwo(list: List<Int>, number: Int): Pair<Int, Int> = TODO()
+fun findSumOfTwo(list: List<Int>, number: Int): Pair<Int, Int> {
+    for (i in list.indices) {
+        for (j in i + 1 until list.size) {
+            if (list[i] + list[j] == number)
+                return Pair(i, j)
+        }
+    }
+    return Pair(-1, -1)
+}
 
 /**
  * Очень сложная (8 баллов)
@@ -389,4 +409,85 @@ fun findSumOfTwo(list: List<Int>, number: Int): Pair<Int, Int> = TODO()
  *     450
  *   ) -> emptySet()
  */
-fun bagPacking(treasures: Map<String, Pair<Int, Int>>, capacity: Int): Set<String> = TODO()
+fun bagPacking(treasures: Map<String, Pair<Int, Int>>, capacity: Int): Set<String> {
+
+    var minWeight = capacity
+    for ((_, value) in treasures) {
+        if (value.first < minWeight)
+            minWeight = value.first
+    }
+
+    // Data structure table
+    /*
+    |              |             Bag's weight 1                    |   Bag's weight 2...
+    --------------------------------------------------------------------
+    | Tr.1, (w, c) | {total weight: x, total cost: y}, {treasures} |   ...
+    | Tr.2, (w, c) | ...                                           |
+    | ...          | ...                                           |
+     */
+
+    //                 {  treasure, (weight, cost):  {bag's weight: ({"weight": Int, "price": Int}, {treasures}) }  }
+
+    val table: MutableMap<Pair<String, Pair<Int, Int>>, MutableMap<Int, Pair<MutableMap<String, Int>, MutableSet<String>>>> =
+        mutableMapOf()
+
+    //                                      sort by weight
+    for ((key, value) in treasures.toList().sortedBy { it.second.first }.toMap()) {
+        table[Pair(key, value)] = mutableMapOf()
+    }
+
+    val weights = mutableListOf<Int>()
+
+    // Разбиение вместимости рюкзака
+    for (i in minWeight..capacity step minWeight)
+        weights.add(i)
+    if (!weights.contains(capacity))
+        weights.add(capacity)
+
+    val first = table.keys.first()
+
+    for (weight in weights) {
+        for ((key) in table) {
+            table[key]!![weight] = Pair(mutableMapOf("weight" to 0, "price" to 0), mutableSetOf())
+        }
+
+        if (first.second.first <= weight)
+            table[first]!![weight] = Pair(
+                mutableMapOf("weight" to first.second.first, "price" to first.second.second),
+                mutableSetOf(first.first)
+            )
+    }
+
+    var previous = first
+
+    for ((key) in table.minus(first)) {
+
+        for (weight in weights) {
+            var stockWeight = weight - key.second.first
+            var stockPrice = 0
+            if (stockWeight > 0) {
+                stockWeight = weights.filter { it <= stockWeight }.maxOrNull() ?: 0
+                stockPrice = table[previous]!![stockWeight]?.first?.get("price") ?: 0
+            }
+
+            if (table[previous]!![weight]!!.first["price"]!! < key.second.second + stockPrice && key.second.first <= weight) {
+                table[key]!![weight]!!.first["weight"] =
+                    table[key]!![weight]!!.first["weight"]!! + key.second.first
+                table[key]!![weight]!!.first["price"] =
+                    table[key]!![weight]!!.first["price"]!! + key.second.second
+
+                table[key]!![weight]!!.second.add(key.first)
+                if (stockPrice > 0) {
+                    table[key]!![weight]!!.second.addAll(table[previous]!![stockWeight]!!.second)
+                    table[key]!![weight]!!.first["weight"] = stockWeight
+                    table[key]!![weight]!!.first["price"] = table[key]!![weight]!!.first["price"]!! + stockPrice
+                }
+            } else {
+                table[key]!![weight] = table[previous]!![weight]!!
+            }
+        }
+        previous = key
+    }
+
+    return table[table.keys.last()]!![weights.last()]!!.second
+}

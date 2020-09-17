@@ -274,23 +274,22 @@ fun hasDifferentDigits(n: Int): Boolean {
  */
 fun sin(x: Double, eps: Double): Double {
     var mutableX = x
-    while (mutableX >= 2 * PI) {
-        mutableX -= 2 * PI
-    }
-    while (mutableX <= -2 * PI) {
-        mutableX += 2 * PI
-    }
+
+    // how 2pi in x?
+    if (x > 2 * PI)
+        mutableX -= (2 * PI) * floor(x / (2 * PI))
+    else if (x < -2 * PI)
+        mutableX += (2 * PI) * floor(x / (2 * PI))
 
     val sqrX = mutableX * mutableX
 
-    var a: Double = mutableX
+    var a = mutableX
     var factorialBase = 1
 
     var sinx = 0.0
 
     do {
         sinx += a
-
         a *= -1.0 * sqrX / (2 * factorialBase) / (2 * factorialBase + 1)
         factorialBase += 1
 
@@ -309,12 +308,12 @@ fun sin(x: Double, eps: Double): Double {
  */
 fun cos(x: Double, eps: Double): Double {
     var mutableX = x
-    while (mutableX >= 2 * PI) {
-        mutableX -= 2 * PI
-    }
-    while (mutableX <= -2 * PI) {
-        mutableX += 2 * PI
-    }
+
+    // how 2pi in x?
+    if (x > 2 * PI)
+        mutableX -= (2 * PI) * floor(x / (2 * PI))
+    else if (x < -2 * PI)
+        mutableX += (2 * PI) * floor(x / (2 * PI))
 
     val sqrX = mutableX * mutableX
 
@@ -322,10 +321,8 @@ fun cos(x: Double, eps: Double): Double {
     var factorialBase = 1
 
     var cosx = 0.0
-
     do {
         cosx += a
-
         a *= -1.0 * sqrX / (2 * factorialBase - 1) / (2 * factorialBase)
         factorialBase += 1
 
@@ -368,7 +365,7 @@ fun squareSequenceDigit(n: Int): Int {
 fun pow(base: Int, power: Int): Int {
     if (power == 0)
         return 1
-    var res: Int = base
+    var res = base
     var needPower = power
     while (needPower > 1) {
         res *= base
