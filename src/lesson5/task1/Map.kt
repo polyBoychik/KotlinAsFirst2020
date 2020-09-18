@@ -348,6 +348,7 @@ fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<Stri
             } else {
                 extendedFriends[primary]!!.add(secondary)
             }
+            extendedFriends[secondary]?.let { extendedFriends[primary]!!.addAll(it.minus(primary)) }
         }
     }
 

@@ -91,7 +91,7 @@ fun dateStrToDigit(str: String): String {
         val day = parts[0].toIntOrNull()
 
         if (year != null && year > 0 && month != null && day != null && day > 0 && daysInMonth(month, year) >= day)
-            result = String.format("%02d.%02d.%04d", day, month, year)
+            result = String.format("%02d.%02d.%d", day, month, year)
     }
     return result
 }
@@ -141,7 +141,12 @@ fun dateDigitToStr(digital: String): String {
  *
  * PS: Дополнительные примеры работы функции можно посмотреть в соответствующих тестах.
  */
-fun flattenPhoneNumber(phone: String): String = TODO()
+fun flattenPhoneNumber(phone: String): String {
+    val clearedPhone = phone.replace(" ", "").replace("-", "")
+    return if (clearedPhone.matches(Regex("""(\+\d+)?(\(\d+\))?\d+""")))
+        clearedPhone.replace("(", "").replace(")", "")
+    else ""
+}
 
 /**
  * Средняя (5 баллов)
@@ -153,7 +158,9 @@ fun flattenPhoneNumber(phone: String): String = TODO()
  * Прочитать строку и вернуть максимальное присутствующее в ней число (717 в примере).
  * При нарушении формата входной строки или при отсутствии в ней чисел, вернуть -1.
  */
-fun bestLongJump(jumps: String): Int = TODO()
+fun bestLongJump(jumps: String): Int = if (Regex("""[^[%\-\d\s]]""").find(jumps) == null)
+    jumps.filter { it.isDigit() || it.isWhitespace() }.split(Regex("""\s""")).filter { it != "" }
+        .map { it.toInt() }.maxOrNull() ?: -1 else -1
 
 /**
  * Сложная (6 баллов)
