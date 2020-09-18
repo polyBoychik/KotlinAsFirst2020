@@ -304,6 +304,21 @@ fun hasAnagrams(words: List<String>): Boolean {
 }
 
 /**
+ * Возвращает множество всех знакомых name, расширяя friends знакомыми через рукопожатия
+ */
+fun familiar(name: String, friends: MutableMap<String, MutableSet<String>>): Set<String> {
+    val onesFriends = mutableSetOf<String>()
+    onesFriends.addAll(friends[name] ?: setOf())
+
+    if (friends[name] != null && friends[name]!!.size != 0) {
+        for (person in onesFriends) {
+            friends[name]!!.addAll(familiar(person, friends.minus(name).toMutableMap()).minus(name))
+        }
+    }
+    return friends[name] ?: setOf()
+}
+
+/**
  * Сложная (5 баллов)
  *
  * Для заданного ассоциативного массива знакомых через одно рукопожатие `friends`
@@ -339,17 +354,6 @@ fun hasAnagrams(words: List<String>): Boolean {
  */
 fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<String>> {
     val extendedFriends = mutableMapOf<String, MutableSet<String>>()
-    for ((primary, handshakes) in friends) {
-        for (secondary in handshakes) {
-            if (extendedFriends[primary] == null) {
-                extendedFriends[primary] = mutableSetOf(secondary)
-            } else {
-                extendedFriends[primary]!!.add(secondary)
-            }
-            friends[secondary]?.let { extendedFriends[primary]!!.addAll(it.minus(primary)) }
-            extendedFriends[secondary]?.let { extendedFriends[primary]!!.addAll(it.minus(primary)) }
-        }
-    }
 
     for ((key, value) in friends) {
         if (!extendedFriends.containsKey(key)) {
@@ -362,6 +366,10 @@ fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<Stri
                 extendedFriends[name] = mutableSetOf()
             }
         }
+    }
+
+    for (name in extendedFriends.keys) {
+        familiar(name, extendedFriends)
     }
 
     return extendedFriends
