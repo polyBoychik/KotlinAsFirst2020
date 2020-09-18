@@ -339,15 +339,14 @@ fun hasAnagrams(words: List<String>): Boolean {
  */
 fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<String>> {
     val extendedFriends = mutableMapOf<String, MutableSet<String>>()
-
     for ((primary, handshakes) in friends) {
         for (secondary in handshakes) {
             if (extendedFriends[primary] == null) {
                 extendedFriends[primary] = mutableSetOf(secondary)
-                friends[secondary]?.let { extendedFriends[primary]!!.addAll(it.minus(primary)) }
             } else {
                 extendedFriends[primary]!!.add(secondary)
             }
+            friends[secondary]?.let { extendedFriends[primary]!!.addAll(it.minus(primary)) }
             extendedFriends[secondary]?.let { extendedFriends[primary]!!.addAll(it.minus(primary)) }
         }
     }
