@@ -2,6 +2,7 @@
 
 package lesson3.task1
 
+import lesson5.task1.findSumOfTwo
 import kotlin.math.*
 
 // Урок 3: циклы
@@ -279,7 +280,7 @@ fun sin(x: Double, eps: Double): Double {
     if (x > 2 * PI)
         mutableX -= (2 * PI) * floor(x / (2 * PI))
     else if (x < -2 * PI)
-        mutableX += (2 * PI) * floor(x / (2 * PI))
+        mutableX -= (2 * PI) * ceil(x / (2 * PI) + 0.5)
 
     val sqrX = mutableX * mutableX
 
@@ -313,7 +314,7 @@ fun cos(x: Double, eps: Double): Double {
     if (x > 2 * PI)
         mutableX -= (2 * PI) * floor(x / (2 * PI))
     else if (x < -2 * PI)
-        mutableX += (2 * PI) * floor(x / (2 * PI))
+        mutableX -= (2 * PI) * ceil(x / (2 * PI) + 0.5)
 
     val sqrX = mutableX * mutableX
 

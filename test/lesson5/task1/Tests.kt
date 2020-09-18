@@ -247,6 +247,7 @@ class Tests {
     @Test
     @Tag("3")
     fun canBuildFrom() {
+        assertFalse(canBuildFrom(listOf('a', 'a'), " "))
         assertFalse(canBuildFrom(emptyList(), "foo"))
         assertTrue(canBuildFrom(listOf('a', 'b', 'o'), "baobab"))
         assertFalse(canBuildFrom(listOf('a', 'm', 'r'), "Marat"))
@@ -282,6 +283,20 @@ class Tests {
     @Test
     @Tag("5")
     fun propagateHandshakes() {
+        assertEquals(
+            mapOf(
+                "Marat" to setOf("Sveta", "Mikhail"),
+                "Sveta" to setOf("Mikhail", "Marat"),
+                "Mikhail" to setOf("Marat", "Sveta")
+            ),
+            propagateHandshakes(
+                mapOf(
+                    "Marat" to setOf("Sveta", "Mikhail"),
+                    "Sveta" to setOf("Mikhail"),
+                    "Mikhail" to setOf("Marat", "Sveta")
+                )
+            )
+        )
         assertEquals(
             mapOf(
                 "Marat" to setOf("Mikhail", "Sveta"),
@@ -336,6 +351,14 @@ class Tests {
     @Test
     @Tag("8")
     fun bagPacking() {
+        assertEquals(
+            emptySet<String>(),
+            bagPacking(
+                mapOf(),
+                1
+            )
+        )
+
         assertEquals(
             setOf("Кубок", "Слиток"),
             bagPacking(
