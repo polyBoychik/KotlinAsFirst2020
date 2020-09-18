@@ -317,13 +317,13 @@ fun familiar(
 
     if (friends[name] != null && friends[name]!!.size != 0) {
         for (person in onesFriends) {
-            if (checked[person] == true) {
+            if (checked[person]!!) {
                 friends[name]!!.addAll(friends[person]?.minus(name) ?: setOf())
             } else
                 friends[name]!!.addAll(familiar(person, friends.minus(name).toMutableMap(), checked).minus(name))
         }
     }
-    checked[name] = true
+//    checked[name] = true
     return friends[name] ?: setOf()
 }
 
@@ -379,9 +379,11 @@ fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<Stri
             }
         }
     }
-
     for (name in extendedFriends.keys) {
-        familiar(name, extendedFriends, checked)
+        if (!checked[name]!!) {
+            familiar(name, extendedFriends, checked)
+            checked[name] = true
+        }
     }
 
     return extendedFriends
