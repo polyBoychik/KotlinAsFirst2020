@@ -306,15 +306,24 @@ fun hasAnagrams(words: List<String>): Boolean {
 /**
  * Возвращает множество всех знакомых name, расширяя friends знакомыми через рукопожатия
  */
-fun familiar(name: String, friends: MutableMap<String, MutableSet<String>>): Set<String> {
+fun familiar(
+    name: String,
+    friends: MutableMap<String, MutableSet<String>>,
+    checked: MutableMap<String, Boolean>
+): Set<String> {
     val onesFriends = mutableSetOf<String>()
     onesFriends.addAll(friends[name] ?: setOf())
 
+
     if (friends[name] != null && friends[name]!!.size != 0) {
         for (person in onesFriends) {
-            friends[name]!!.addAll(familiar(person, friends.minus(name).toMutableMap()).minus(name))
+            if (checked[person] == true) {
+                friends[name]!!.addAll(friends[person]!!.minus(name))
+            } else
+                friends[name]!!.addAll(familiar(person, friends.minus(name).toMutableMap(), checked).minus(name))
         }
     }
+    checked[name] = true
     return friends[name] ?: setOf()
 }
 
@@ -354,22 +363,25 @@ fun familiar(name: String, friends: MutableMap<String, MutableSet<String>>): Set
  */
 fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<String>> {
     val extendedFriends = mutableMapOf<String, MutableSet<String>>()
+    val checked = mutableMapOf<String, Boolean>()
 
     for ((key, value) in friends) {
         if (!extendedFriends.containsKey(key)) {
             extendedFriends[key] = mutableSetOf()
         }
         extendedFriends[key]!!.addAll(value)
+        checked[key] = false
 
         for (name in value) {
             if (!extendedFriends.containsKey(name)) {
                 extendedFriends[name] = mutableSetOf()
+                checked[name] = false
             }
         }
     }
 
     for (name in extendedFriends.keys) {
-        familiar(name, extendedFriends)
+        familiar(name, extendedFriends, checked)
     }
 
     return extendedFriends
