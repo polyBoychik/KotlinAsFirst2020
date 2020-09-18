@@ -318,7 +318,7 @@ fun familiar(
     if (friends[name] != null && friends[name]!!.size != 0) {
         for (person in onesFriends) {
             if (checked[person] == true) {
-                friends[name]!!.addAll(friends[person]!!.minus(name))
+                friends[name]!!.addAll(friends[person]?.minus(name) ?: setOf())
             } else
                 friends[name]!!.addAll(familiar(person, friends.minus(name).toMutableMap(), checked).minus(name))
         }
