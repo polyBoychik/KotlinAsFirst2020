@@ -2,7 +2,6 @@
 
 package lesson3.task1
 
-import lesson5.task1.findSumOfTwo
 import kotlin.math.*
 
 // Урок 3: циклы

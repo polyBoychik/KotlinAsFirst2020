@@ -2,8 +2,6 @@
 
 package lesson5.task1
 
-import java.util.*
-
 // Урок 5: ассоциативные массивы и множества
 // Максимальное количество баллов = 14
 // Рекомендуемое количество баллов = 9
@@ -342,6 +340,17 @@ fun hasAnagrams(words: List<String>): Boolean {
 fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<String>> {
     val extendedFriends = mutableMapOf<String, MutableSet<String>>()
 
+    for ((primary, handshakes) in friends) {
+        for (secondary in handshakes) {
+            if (extendedFriends[primary] == null) {
+                extendedFriends[primary] = mutableSetOf(secondary)
+                friends[secondary]?.let { extendedFriends[primary]!!.addAll(it.minus(primary)) }
+            } else {
+                extendedFriends[primary]!!.add(secondary)
+            }
+        }
+    }
+
     for ((key, value) in friends) {
         if (!extendedFriends.containsKey(key)) {
             extendedFriends[key] = mutableSetOf()
@@ -352,12 +361,6 @@ fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<Stri
             if (!extendedFriends.containsKey(name)) {
                 extendedFriends[name] = mutableSetOf()
             }
-        }
-    }
-
-    for ((key, value) in extendedFriends) {
-        for (name in value) {
-            extendedFriends[key]!!.addAll(extendedFriends[name]!!.minus(key))
         }
     }
 
