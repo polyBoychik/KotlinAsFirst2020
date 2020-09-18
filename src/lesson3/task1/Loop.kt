@@ -273,17 +273,11 @@ fun hasDifferentDigits(n: Int): Boolean {
  * Использовать kotlin.math.sin и другие стандартные реализации функции синуса в этой задаче запрещается.
  */
 fun sin(x: Double, eps: Double): Double {
-    var mutableX = x
+    val briefX = x % (2 * PI)
 
-    // how 2pi in x?
-    if (x > 2 * PI)
-        mutableX -= (2 * PI) * floor(x / (2 * PI))
-    else if (x < -2 * PI)
-        mutableX -= (2 * PI) * ceil(x / (2 * PI) + 0.5)
+    val sqrX = briefX * briefX
 
-    val sqrX = mutableX * mutableX
-
-    var a = mutableX
+    var a = briefX
     var factorialBase = 1
 
     var sinx = 0.0
@@ -307,15 +301,9 @@ fun sin(x: Double, eps: Double): Double {
  * Использовать kotlin.math.cos и другие стандартные реализации функции косинуса в этой задаче запрещается.
  */
 fun cos(x: Double, eps: Double): Double {
-    var mutableX = x
+    val briefX = x % (2 * PI)
 
-    // how 2pi in x?
-    if (x > 2 * PI)
-        mutableX -= (2 * PI) * floor(x / (2 * PI))
-    else if (x < -2 * PI)
-        mutableX -= (2 * PI) * ceil(x / (2 * PI) + 0.5)
-
-    val sqrX = mutableX * mutableX
+    val sqrX = briefX * briefX
 
     var a = 1.0
     var factorialBase = 1
