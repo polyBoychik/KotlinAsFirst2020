@@ -75,6 +75,7 @@ class Tests {
     @Tag("5")
     fun bestLongJump() {
         assertEquals(717, bestLongJump("706 % - 717 - 703"))
+        assertEquals(717, bestLongJump("706 % - 717 - 717"))
         assertEquals(-1, bestLongJump("% - - % -"))
         assertEquals(754, bestLongJump("700 717 707 % 754"))
         assertEquals(-1, bestLongJump("700 + 700"))
@@ -145,11 +146,14 @@ class Tests {
         assertEquals(49, fromRoman("XLIX"))
         assertEquals(-1, fromRoman("XXXXLIX"))
         assertEquals(-1, fromRoman("Z"))
+        assertEquals(-1, fromRoman(""))
     }
 
     @Test
     @Tag("7")
     fun computeDeviceCells() {
+        assertEquals(listOf(0), computeDeviceCells(1, "", 500))
+        assertEquals(List(15) { 0 }, computeDeviceCells(15, "", 500))
         assertEquals(listOf(0, 0, 0, 0, 0, 1, 1, 1, 1, 1), computeDeviceCells(10, "+>+>+>+>+", 10000))
         assertEquals(listOf(0, 0, 0, 0, 0, 1, 1, 1, 1, 1), computeDeviceCells(10, " +> +>+>  +>+", 10000))
         assertEquals(listOf(-1, -1, -1, -1, -1, 0, 0, 0, 0, 0), computeDeviceCells(10, "<-<-<-<-<-", 10000))

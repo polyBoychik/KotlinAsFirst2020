@@ -3,10 +3,7 @@
 package lesson6.task1
 
 import lesson2.task2.daysInMonth
-import lesson5.task1.findSumOfTwo
-import java.nio.channels.Selector
 import java.util.*
-import kotlin.IllegalArgumentException
 
 // Урок 6: разбор строк, исключения
 // Максимальное количество баллов = 13
@@ -162,7 +159,7 @@ fun flattenPhoneNumber(phone: String): String {
  * Прочитать строку и вернуть максимальное присутствующее в ней число (717 в примере).
  * При нарушении формата входной строки или при отсутствии в ней чисел, вернуть -1.
  */
-fun bestLongJump(jumps: String): Int = if (Regex("""[^[%\-\d\s]]""").find(jumps) == null)
+fun bestLongJump(jumps: String): Int = if (jumps.matches(Regex("""^((\d+|%|-) )*(\d+|%|-)$""")))
     jumps.filter { it.isDigit() || it.isWhitespace() }.split(Regex("""\s""")).filter { it.toIntOrNull() != null }
         .map { it.toInt() }.maxOrNull() ?: -1 else -1
 
@@ -178,7 +175,7 @@ fun bestLongJump(jumps: String): Int = if (Regex("""[^[%\-\d\s]]""").find(jumps)
  * вернуть -1.
  */
 fun bestHighJump(jumps: String) =
-    if (jumps.matches(Regex("""^(\d+\s(%+(\-|\+)?|(\-|\+))\s)*(\d+\s(%+(\-|\+)?|(\-|\+)))${'$'}""")))
+    if (jumps.matches(Regex("""^(\d+\s(%+(-|\+)?|(-|\+))\s)*(\d+\s(%+(-|\+)?|(-|\+)))${'$'}""")))
         Regex("""\d+\s%*\+""").findAll(jumps).maxOfOrNull { it.value.filter { it.isDigit() }.toInt() } ?: -1
     else -1
 
@@ -258,7 +255,7 @@ fun firstDuplicateIndex(str: String): Int {
  * Все цены должны быть больше нуля либо равны нулю.
  */
 fun mostExpensive(description: String) =
-    if (description.matches(Regex("""([^\s]+\s\d+(\.\d+)?\;\s)*[^\s]+\s\d+(\.\d+)?${'$'}"""))) {
+    if (description.matches(Regex("""([^\s]+\s\d+(\.\d+)?;\s)*[^\s]+\s\d+(\.\d+)?${'$'}"""))) {
         description.split("; ").map { val pair = it.split(" "); pair[0] to pair[1].toDouble() }.toMap()
             .maxByOrNull { it.value }!!.key
     } else ""
@@ -275,8 +272,9 @@ fun mostExpensive(description: String) =
  * Вернуть -1, если roman не является корректным римским числом
  */
 fun fromRoman(roman: String): Int {
-    if (!roman.matches(Regex("""^M{0,3}(CM)?D{0,3}(CD)?C{0,3}(XC)?L{0,3}(XL)?X{0,3}(IX)?V{0,3}(IV)?I{0,3}${'$'}""")))
-        return -1
+    if (roman.isEmpty() ||
+        !roman.matches(Regex("""^M{0,3}(CM)?D{0,3}(CD)?C{0,3}(XC)?L{0,3}(XL)?X{0,3}(IX)?V{0,3}(IV)?I{0,3}${'$'}"""))
+    ) return -1
 
     val interpreter = mapOf(
         "M" to 1000, "CM" to 900, "D" to 500, "CD" to 400, "C" to 100, "XC" to 90,
@@ -363,7 +361,7 @@ fun findClosingBrace(str: String): Int {
  *
  */
 fun computeDeviceCells(cells: Int, commands: String, limit: Int): List<Int> {
-    if (Regex("""^[^><+\-\[\]]*$""").find(commands) != null || !allBracesValid(commands))
+    if (!commands.matches(Regex("""^[> <+\-\[\]]*$""")) || !allBracesValid(commands))
         throw java.lang.IllegalArgumentException()
 
     val conveyer = MutableList(cells) { 0 }
