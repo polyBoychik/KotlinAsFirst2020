@@ -2,6 +2,8 @@
 
 package lesson5.task1
 
+import java.util.*
+
 // Урок 5: ассоциативные массивы и множества
 // Максимальное количество баллов = 14
 // Рекомендуемое количество баллов = 9
@@ -447,77 +449,70 @@ fun bagPacking(treasures: Map<String, Pair<Int, Int>>, capacity: Int): Set<Strin
             minWeight = value.first
     }
 
-    // Data structure table
-    /*
-    |              |             Bag's weight 1                    |   Bag's weight 2...
-    --------------------------------------------------------------------
-    | Tr.1, (w, c) | {total weight: x, total cost: y}, {treasures} |   ...
-    | Tr.2, (w, c) | ...                                           |
-    | ...          | ...                                           |
-     */
-
-    //                 {  treasure, (weight, cost):  {bag's weight: ({"weight": Int, "price": Int}, {treasures}) }  }
-
-    val table: MutableMap<Pair<String, Pair<Int, Int>>, MutableMap<Int, Pair<MutableMap<String, Int>, MutableSet<String>>>> =
-        mutableMapOf()
-
-    //                                      sort by weight
-    for ((key, value) in treasures.toList().sortedBy { it.second.first }.toMap()) {
-        table[Pair(key, value)] = mutableMapOf()
-    }
-
     val weights = mutableListOf<Int>()
-
     // Разбиение вместимости рюкзака
     for (i in minWeight..capacity step minWeight)
         weights.add(i)
     if (!weights.contains(capacity))
         weights.add(capacity)
 
-    val first = table.keys.first()
+    val treases = treasures.entries.sortedBy { it.value.first }
 
-    for (weight in weights) {
-        for ((key) in table) {
-            table[key]!![weight] = Pair(mutableMapOf("weight" to 0, "price" to 0), mutableSetOf())
+    /* Data structure table
+
+|              |           Bag's weight 1              |   Bag's weight 2...
+--------------------------------------------------------------------
+| Tr.1, (w, c) | total weight, total cost, {treasures} |   ...
+| Tr.2, (w, c) | ...                                   |
+| ...          | ...                                   |
+
+*/
+
+    val tableTotalWeight: Array<Array<Int>> = Array(treases.size) { Array(weights.size) { 0 } }
+    val tableTotalPrice: Array<Array<Int>> = Array(treases.size) { Array(weights.size) { 0 } }
+    val tableTreasures: Array<Array<MutableSet<String>>> =
+        Array(treases.size) { Array(weights.size) { mutableSetOf() } }
+
+    // Заполнение первой строки одним сокровищем, если оно вмещается
+    for (weight in weights.indices) {
+        if (treases[0].value.first <= weights[weight]) {
+            tableTotalWeight[0][weight] = treases[0].value.first
+            tableTotalPrice[0][weight] = treases[0].value.second
+            tableTreasures[0][weight].add(treases[0].key)
         }
-
-        if (first.second.first <= weight)
-            table[first]!![weight] = Pair(
-                mutableMapOf("weight" to first.second.first, "price" to first.second.second),
-                mutableSetOf(first.first)
-            )
     }
 
-    var previous = first
+    // Заполнение остальных строк таблицы
+    for (treasure in 1 until treases.size) {
+        for (weight in weights.indices) {
 
-    for ((key) in table.minus(first)) {
-
-        for (weight in weights) {
-            var stockWeight = weight - key.second.first
+            var stockWeight = weights[weight] - treases[treasure].value.first
             var stockPrice = 0
             if (stockWeight > 0) {
-                stockWeight = weights.filter { it <= stockWeight }.maxOrNull() ?: 0
-                stockPrice = table[previous]!![stockWeight]?.first?.get("price") ?: 0
+                stockWeight = weights.indexOf(weights.filter { it <= stockWeight }.maxOrNull() ?: -1)
+                stockPrice = if (stockWeight != -1) tableTotalPrice[treasure - 1][stockWeight] else 0
+
             }
 
-            if (table[previous]!![weight]!!.first["price"]!! < key.second.second + stockPrice && key.second.first <= weight) {
-                table[key]!![weight]!!.first["weight"] =
-                    table[key]!![weight]!!.first["weight"]!! + key.second.first
-                table[key]!![weight]!!.first["price"] =
-                    table[key]!![weight]!!.first["price"]!! + key.second.second
+            if (tableTotalPrice[treasure - 1][weight] < treases[treasure].value.second + stockPrice &&
+                treases[treasure].value.first <= weights[weight]
+            ) {
+                tableTotalWeight[treasure][weight] += treases[treasure].value.first
+                tableTotalPrice[treasure][weight] += treases[treasure].value.second
+                tableTreasures[treasure][weight].add(treases[treasure].key)
 
-                table[key]!![weight]!!.second.add(key.first)
                 if (stockPrice > 0) {
-                    table[key]!![weight]!!.second.addAll(table[previous]!![stockWeight]!!.second)
-                    table[key]!![weight]!!.first["weight"] = stockWeight
-                    table[key]!![weight]!!.first["price"] = table[key]!![weight]!!.first["price"]!! + stockPrice
+                    tableTreasures[treasure][weight].addAll(tableTreasures[treasure - 1][stockWeight])
+                    tableTotalWeight[treasure][weight] += stockWeight
+                    tableTotalPrice[treasure][weight] += stockPrice
                 }
             } else {
-                table[key]!![weight] = table[previous]!![weight]!!
+                tableTotalWeight[treasure][weight] = tableTotalWeight[treasure - 1][weight]
+                tableTotalPrice[treasure][weight] = tableTotalPrice[treasure - 1][weight]
+                tableTreasures[treasure][weight] = tableTreasures[treasure - 1][weight]
             }
         }
-        previous = key
     }
 
-    return table[table.keys.last()]!![weights.last()]!!.second
+    return tableTreasures[tableTreasures.size - 1][weights.size - 1]
 }

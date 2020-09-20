@@ -85,8 +85,17 @@ class Tests {
     @Tag("6")
     fun bestHighJump() {
         assertEquals(226, bestHighJump("226 +"))
+        assertEquals(-1, bestHighJump("226 -"))
+        assertEquals(-1, bestHighJump("226 ---"))
+        assertEquals(-1, bestHighJump("226 %-"))
+        assertEquals(-1, bestHighJump("226 %"))
+        assertEquals(-1, bestHighJump("226 + "))
         assertEquals(-1, bestHighJump("???"))
         assertEquals(230, bestHighJump("220 + 224 %+ 228 %- 230 + 232 %%- 234 %"))
+        assertEquals(-1, bestHighJump("220 + 224 %++ 228 %- 230 + 232 %%- 234 %"))
+        assertEquals(-1, bestHighJump("220 + 224 +% 228 %- 230 + 232 %%- 234 %"))
+        assertEquals(-1, bestHighJump("220 + 224 % 228 %- 230 + 232 %%- 234 "))
+        assertEquals(-1, bestHighJump("220 + 224 % 228 %- 230 + 232 %%- 234"))
     }
 
     @Test
@@ -96,7 +105,9 @@ class Tests {
         assertEquals(4, plusMinus("2 + 2"))
         assertEquals(6, plusMinus("2 + 31 - 40 + 13"))
         assertEquals(-1, plusMinus("0 - 1"))
+        assertEquals(0, plusMinus("0 - 0 + 0 - 0"))
         assertThrows(IllegalArgumentException::class.java) { plusMinus("+2") }
+        assertThrows(IllegalArgumentException::class.java) { plusMinus("+") }
         assertThrows(IllegalArgumentException::class.java) { plusMinus("+ 4") }
         assertThrows(IllegalArgumentException::class.java) { plusMinus("4 - -2") }
         assertThrows(IllegalArgumentException::class.java) { plusMinus("44 - - 12") }
@@ -116,6 +127,9 @@ class Tests {
     @Tag("6")
     fun mostExpensive() {
         assertEquals("", mostExpensive(""))
+        assertEquals("", mostExpensive("Хлеб -5;"))
+        assertEquals("", mostExpensive("Хлеб 5;"))
+        assertEquals("", mostExpensive("Хлеб 5; Кура 65..5"))
         assertEquals("Курица", mostExpensive("Хлеб 39.9; Молоко 62.5; Курица 184.0; Конфеты 89.9"))
         assertEquals("Вино", mostExpensive("Вино 255.0"))
     }
@@ -123,11 +137,13 @@ class Tests {
     @Test
     @Tag("6")
     fun fromRoman() {
+        assertEquals(3000, fromRoman("MMM"))
         assertEquals(1, fromRoman("I"))
         assertEquals(3000, fromRoman("MMM"))
         assertEquals(1978, fromRoman("MCMLXXVIII"))
         assertEquals(694, fromRoman("DCXCIV"))
         assertEquals(49, fromRoman("XLIX"))
+        assertEquals(-1, fromRoman("XXXXLIX"))
         assertEquals(-1, fromRoman("Z"))
     }
 
@@ -135,6 +151,7 @@ class Tests {
     @Tag("7")
     fun computeDeviceCells() {
         assertEquals(listOf(0, 0, 0, 0, 0, 1, 1, 1, 1, 1), computeDeviceCells(10, "+>+>+>+>+", 10000))
+        assertEquals(listOf(0, 0, 0, 0, 0, 1, 1, 1, 1, 1), computeDeviceCells(10, " +> +>+>  +>+", 10000))
         assertEquals(listOf(-1, -1, -1, -1, -1, 0, 0, 0, 0, 0), computeDeviceCells(10, "<-<-<-<-<-", 10000))
         assertEquals(listOf(1, 1, 1, 1, 1, 0, 0, 0, 0, 0), computeDeviceCells(10, "- <<<<< +[>+]", 10000))
         assertEquals(

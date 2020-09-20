@@ -3,6 +3,10 @@
 package lesson6.task1
 
 import lesson2.task2.daysInMonth
+import lesson5.task1.findSumOfTwo
+import java.nio.channels.Selector
+import java.util.*
+import kotlin.IllegalArgumentException
 
 // Урок 6: разбор строк, исключения
 // Максимальное количество баллов = 13
@@ -173,7 +177,10 @@ fun bestLongJump(jumps: String): Int = if (Regex("""[^[%\-\d\s]]""").find(jumps)
  * При нарушении формата входной строки, а также в случае отсутствия удачных попыток,
  * вернуть -1.
  */
-fun bestHighJump(jumps: String): Int = TODO()
+fun bestHighJump(jumps: String) =
+    if (jumps.matches(Regex("""^(\d+\s(%+(\-|\+)?|(\-|\+))\s)*(\d+\s(%+(\-|\+)?|(\-|\+)))${'$'}""")))
+        Regex("""\d+\s%*\+""").findAll(jumps).maxOfOrNull { it.value.filter { it.isDigit() }.toInt() } ?: -1
+    else -1
 
 /**
  * Сложная (6 баллов)
@@ -184,7 +191,39 @@ fun bestHighJump(jumps: String): Int = TODO()
  * Вернуть значение выражения (6 для примера).
  * Про нарушении формата входной строки бросить исключение IllegalArgumentException
  */
-fun plusMinus(expression: String): Int = TODO()
+fun plusMinus(expression: String): Int {
+    // Check string' validity
+    if (expression.matches(Regex("""\d+(\s[+\-]\s\d+)*"""))) {
+
+        var from = 0
+        var to = 0
+
+        // get first number and write it in the result
+        while (to < expression.length && expression[to].isDigit())
+            to++
+        var result = expression.substring(from, to).toIntOrNull()!!
+        from = to
+
+        while (to < expression.length) {
+            to += 3
+            while (to < expression.length && expression[to].isDigit())
+                to++
+
+            // get next number
+            val operand = expression.substring(from + 3, to).toIntOrNull()!!
+
+            // apply operation to result and operand
+            when (expression[from + 1]) {
+                '+' -> result += operand
+                '-' -> result -= operand
+            }
+
+            from = to
+        }
+
+        return result
+    } else throw IllegalArgumentException()
+}
 
 /**
  * Сложная (6 баллов)
@@ -195,7 +234,17 @@ fun plusMinus(expression: String): Int = TODO()
  * Вернуть индекс начала первого повторяющегося слова, или -1, если повторов нет.
  * Пример: "Он пошёл в в школу" => результат 9 (индекс первого 'в')
  */
-fun firstDuplicateIndex(str: String): Int = TODO()
+fun firstDuplicateIndex(str: String): Int {
+    var idx = 0
+    val words = str.toLowerCase().split(" ")
+    for (word in 0 until words.size - 1) {
+        if (words[word] == words[word + 1]) {
+            return idx
+        }
+        idx += words[word].length + 1  // +1 for whitespace
+    }
+    return -1
+}
 
 /**
  * Сложная (6 баллов)
@@ -208,7 +257,11 @@ fun firstDuplicateIndex(str: String): Int = TODO()
  * или пустую строку при нарушении формата строки.
  * Все цены должны быть больше нуля либо равны нулю.
  */
-fun mostExpensive(description: String): String = TODO()
+fun mostExpensive(description: String) =
+    if (description.matches(Regex("""([^\s]+\s\d+(\.\d+)?\;\s)*[^\s]+\s\d+(\.\d+)?${'$'}"""))) {
+        description.split("; ").map { val pair = it.split(" "); pair[0] to pair[1].toDouble() }.toMap()
+            .maxByOrNull { it.value }!!.key
+    } else ""
 
 /**
  * Сложная (6 баллов)
@@ -221,7 +274,57 @@ fun mostExpensive(description: String): String = TODO()
  *
  * Вернуть -1, если roman не является корректным римским числом
  */
-fun fromRoman(roman: String): Int = TODO()
+fun fromRoman(roman: String): Int {
+    if (!roman.matches(Regex("""^M{0,3}(CM)?D{0,3}(CD)?C{0,3}(XC)?L{0,3}(XL)?X{0,3}(IX)?V{0,3}(IV)?I{0,3}${'$'}""")))
+        return -1
+
+    val interpreter = mapOf(
+        "M" to 1000, "CM" to 900, "D" to 500, "CD" to 400, "C" to 100, "XC" to 90,
+        "L" to 50, "XL" to 40, "X" to 10, "IX" to 9, "V" to 5, "IV" to 4, "I" to 1
+    )
+
+    var result = 0
+    var idx = 0
+    for ((rom, arab) in interpreter) {
+        var repeats = 0
+        while (roman.indexOf(rom, startIndex = idx) == idx) {
+            result += arab
+            idx += rom.length
+            repeats++
+
+            if (repeats > 3) {
+                return -1
+            }
+        }
+    }
+    return result
+}
+
+/**
+ * Возвращает true, если все имеющиеся открытые квадратные скобки имеют далее стоящие пары в виде закрытых
+ * квадратных скобок
+ */
+fun allBracesValid(str: String): Boolean {
+    var openedBraces = 0
+    for (chr in str) {
+        when (chr) {
+            '[' -> openedBraces++
+            ']' -> if (openedBraces > 0) openedBraces-- else return false
+        }
+    }
+    return openedBraces == 0
+}
+
+fun findClosingBrace(str: String): Int {
+    var openedBraces = 0
+    for (i in str.indices) {
+        when (str[i]) {
+            '[' -> openedBraces++
+            ']' -> if (openedBraces > 1) openedBraces-- else return i
+        }
+    }
+    return -1
+}
 
 /**
  * Очень сложная (7 баллов)
@@ -259,4 +362,54 @@ fun fromRoman(roman: String): Int = TODO()
  * IllegalArgumentException должен бросаться даже если ошибочная команда не была достигнута в ходе выполнения.
  *
  */
-fun computeDeviceCells(cells: Int, commands: String, limit: Int): List<Int> = TODO()
+fun computeDeviceCells(cells: Int, commands: String, limit: Int): List<Int> {
+    if (Regex("""^[^><+\-\[\]]*$""").find(commands) != null || !allBracesValid(commands))
+        throw java.lang.IllegalArgumentException()
+
+    val conveyer = MutableList(cells) { 0 }
+
+    // Позиция конвейера
+    var pos = cells / 2
+    // Команд выполнено
+    var completed = 0
+    // Индекс команды в строке commands
+    var command = 0
+
+    val openedBraces: Stack<Int> = Stack()
+
+    while (completed < limit && command < commands.length) {
+        when (commands[command]) {
+            '+' -> {
+                conveyer[pos]++; command++
+            }
+            '-' -> {
+                conveyer[pos]--; command++
+            }
+            '>' -> {
+                if (pos < cells - 1) pos++ else throw IllegalStateException(); command++
+            }
+            '<' -> {
+                if (pos > 0) pos-- else throw IllegalStateException(); command++
+            }
+            ' ' -> command++
+            '[' -> {
+                if (conveyer[pos] == 0) {
+                    command += findClosingBrace(commands.substring(command)) + 1
+                } else {
+                    openedBraces.push(command)
+                    command++
+                }
+            }
+            ']' -> {
+                if (conveyer[pos] != 0) {
+                    command = openedBraces.peek() + 1
+                } else {
+                    command++
+                    openedBraces.pop()
+                }
+            }
+        }
+        completed++
+    }
+    return conveyer
+}
