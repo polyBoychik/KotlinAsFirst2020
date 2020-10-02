@@ -72,6 +72,14 @@ Basic, Ruby, Swift.
     }
 
     @Test
+    fun countIgnoreCase() {
+        assertEquals(0, countIgnoreCase("h", "good"))
+        assertEquals(1, countIgnoreCase("h", "hello"))
+        assertEquals(1, countIgnoreCase("hello", "hello"))
+        assertEquals(2, countIgnoreCase("L", "hello"))
+    }
+
+    @Test
     @Tag("14")
     fun countSubstrings() {
         assertEquals(
@@ -129,6 +137,12 @@ Basic, Ruby, Swift.
         )
         File("temp.txt").delete()
 
+    }
+
+    @Test
+    fun removeRedundantSpaces() {
+        assertEquals("hello world", removeRedundantSpaces("  hello   world "))
+        assertEquals("how are you", removeRedundantSpaces(" how  are you "))
     }
 
     @Test

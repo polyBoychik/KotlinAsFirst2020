@@ -2,6 +2,8 @@
 
 package lesson5.task1
 
+import lesson2.task1.segmentLength
+import lesson3.task1.pow
 import java.util.*
 
 // Урок 5: ассоциативные массивы и множества
@@ -306,27 +308,11 @@ fun hasAnagrams(words: List<String>): Boolean {
 }
 
 /**
- * Возвращает множество всех знакомых name, расширяя friends знакомыми через рукопожатия
+ * Удаляет name из handshakes[ name ] для каждого ключа name ассоциативного массива handshakes
  */
-fun familiar(
-    name: String,
-    friends: MutableMap<String, MutableSet<String>>,
-    checked: MutableMap<String, Boolean>
-): Set<String> {
-    val onesFriends = mutableSetOf<String>()
-    onesFriends.addAll(friends[name] ?: setOf())
-
-
-    if (friends[name] != null && friends[name]!!.size != 0) {
-        for (person in onesFriends) {
-            if (checked[person]!!) {
-                friends[name]!!.addAll(friends[person]?.minus(name) ?: setOf())
-            } else
-                friends[name]!!.addAll(familiar(person, friends.minus(name).toMutableMap(), checked).minus(name))
-        }
-    }
-//    checked[name] = true
-    return friends[name] ?: setOf()
+fun deleteNonsense(handshakes: MutableMap<String, MutableSet<String>>) {
+    for ((name, _) in handshakes)
+        handshakes[name]!!.remove(name)
 }
 
 /**
@@ -381,13 +367,25 @@ fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<Stri
             }
         }
     }
-    for (name in extendedFriends.keys) {
-        if (!checked[name]!!) {
-            familiar(name, extendedFriends, checked)
-            checked[name] = true
+
+    for (i in 0 until extendedFriends.size) {
+        for ((name, _) in extendedFriends) {
+            val whoWillBeAdded = mutableMapOf<String, MutableSet<String>>()
+            for (friend in extendedFriends[name]!!) {
+                for (deepFriend in extendedFriends[friend]!!) {
+                    if (whoWillBeAdded[name] == null) {
+                        whoWillBeAdded[name] = mutableSetOf()
+                    }
+                    whoWillBeAdded[name]!!.add(deepFriend)
+                }
+            }
+            for ((person, hisFriends) in whoWillBeAdded) {
+                extendedFriends[person]!!.addAll(hisFriends)
+            }
         }
     }
 
+    deleteNonsense(extendedFriends)
     return extendedFriends
 }
 
@@ -419,6 +417,42 @@ fun findSumOfTwo(list: List<Int>, number: Int): Pair<Int, Int> {
 }
 
 /**
+ * Возвращает восстановленный список взятых сокровищ
+ */
+fun getTreasures(
+    bag: Array<Array<Array<Int>>>,
+    treasures: List<Pair<String, Pair<Int, Int>>>
+): Set<String> {
+    val tookTreasures = mutableSetOf<String>()
+
+    var i = bag.lastIndex
+    var j = bag.last().lastIndex
+
+    var iLink = i
+    var jLink = j
+
+    while (iLink != -1 && jLink != -1) {
+
+        iLink = bag[i][j][1]
+        jLink = bag[i][j][2]
+
+        if (iLink != -1 && jLink != -1) {
+
+            if (bag[i][j][0] != bag[iLink][jLink][0])
+                tookTreasures.add(treasures[i].first)
+
+            i = iLink
+            j = jLink
+
+        } else {
+            tookTreasures.add(treasures[i].first)
+        }
+    }
+
+    return tookTreasures
+}
+
+/**
  * Очень сложная (8 баллов)
  *
  * Входными данными является ассоциативный массив
@@ -440,79 +474,84 @@ fun findSumOfTwo(list: List<Int>, number: Int): Pair<Int, Int> {
  *   ) -> emptySet()
  */
 fun bagPacking(treasures: Map<String, Pair<Int, Int>>, capacity: Int): Set<String> {
+
     if (treasures.isEmpty())
         return emptySet()
 
-    var minWeight = capacity
-    for ((_, value) in treasures) {
-        if (value.first < minWeight)
-            minWeight = value.first
-    }
+    val weightList = mutableListOf<Int>()
+    treasures.forEach { weightList.add(it.value.first) }
 
     val weights = mutableListOf<Int>()
-    // Разбиение вместимости рюкзака
-    for (i in minWeight..capacity step minWeight)
-        weights.add(i)
-    if (!weights.contains(capacity))
-        weights.add(capacity)
 
-    val treases = treasures.entries.sortedBy { it.value.first }
+    // Получение всех возможных комбинаций весов
+    for (i in 1 until pow(2, weightList.size)) {
+        var sum = 0
+        var vector = i
+        var idx = 0
+        while (vector > 0) {
+            if (vector % 2 != 0)
+                sum += weightList[idx]
+            vector /= 2
+            idx++
+        }
+        if (sum <= capacity && !weights.contains(sum))
+            weights.add(sum)
+    }
+    weights.sort()
+
+    val treases = treasures.toList().sortedBy { it.second.first }
 
     /* Data structure table
 
-|              |           Bag's weight 1              |   Bag's weight 2...
+|                |           Bag's weight 1     |   Bag's weight 2...
 --------------------------------------------------------------------
-| Tr.1, (w, c) | total weight, total cost, {treasures} |   ...
-| Tr.2, (w, c) | ...                                   |
-| ...          | ...                                   |
+| (w, c) of tr.1 | total weight, previous: i, j |   ...
+| (w, c) of tr.2 | ...                          |
+| ...            | ...                          |
 
 */
 
-    val tableTotalWeight: Array<Array<Int>> = Array(treases.size) { Array(weights.size) { 0 } }
-    val tableTotalPrice: Array<Array<Int>> = Array(treases.size) { Array(weights.size) { 0 } }
-    val tableTreasures: Array<Array<MutableSet<String>>> =
-        Array(treases.size) { Array(weights.size) { mutableSetOf() } }
+    // 0: cost, 1: row, 2: column with previous treasures
+    val tableTotal: Array<Array<Array<Int>>> = Array(treases.size) { Array(weights.size) { arrayOf(0, -1, -1) } }
 
     // Заполнение первой строки одним сокровищем, если оно вмещается
     for (weight in weights.indices) {
-        if (treases[0].value.first <= weights[weight]) {
-            tableTotalWeight[0][weight] = treases[0].value.first
-            tableTotalPrice[0][weight] = treases[0].value.second
-            tableTreasures[0][weight].add(treases[0].key)
-        }
+        tableTotal[0][weight][0] = treases[0].second.second
     }
 
     // Заполнение остальных строк таблицы
     for (treasure in 1 until treases.size) {
         for (weight in weights.indices) {
 
-            var stockWeight = weights[weight] - treases[treasure].value.first
+            var stockWeight = weights[weight] - treases[treasure].second.first
             var stockPrice = 0
-            if (stockWeight > 0) {
-                stockWeight = weights.indexOf(weights.filter { it <= stockWeight }.maxOrNull() ?: -1)
-                stockPrice = if (stockWeight != -1) tableTotalPrice[treasure - 1][stockWeight] else 0
 
+            if (stockWeight > 0) {
+                stockWeight = weights.indexOf(stockWeight)
+                stockPrice =
+                    if (stockWeight != -1) tableTotal[treasure - 1][stockWeight][0]
+                    else 0
             }
 
-            if (tableTotalPrice[treasure - 1][weight] < treases[treasure].value.second + stockPrice &&
-                treases[treasure].value.first <= weights[weight]
+            if (tableTotal[treasure - 1][weight][0] < treases[treasure].second.second + stockPrice &&
+                treases[treasure].second.first <= weights[weight]
             ) {
-                tableTotalWeight[treasure][weight] += treases[treasure].value.first
-                tableTotalPrice[treasure][weight] += treases[treasure].value.second
-                tableTreasures[treasure][weight].add(treases[treasure].key)
+
+                tableTotal[treasure][weight][0] = treases[treasure].second.second
 
                 if (stockPrice > 0) {
-                    tableTreasures[treasure][weight].addAll(tableTreasures[treasure - 1][stockWeight])
-                    tableTotalWeight[treasure][weight] += stockWeight
-                    tableTotalPrice[treasure][weight] += stockPrice
+                    tableTotal[treasure][weight][0] += stockPrice
+
+                    tableTotal[treasure][weight][1] = treasure - 1
+                    tableTotal[treasure][weight][2] = stockWeight
+
                 }
             } else {
-                tableTotalWeight[treasure][weight] = tableTotalWeight[treasure - 1][weight]
-                tableTotalPrice[treasure][weight] = tableTotalPrice[treasure - 1][weight]
-                tableTreasures[treasure][weight] = tableTreasures[treasure - 1][weight]
+                tableTotal[treasure][weight][0] = tableTotal[treasure - 1][weight][0]
+                tableTotal[treasure][weight][1] = treasure - 1
+                tableTotal[treasure][weight][2] = weight
             }
         }
     }
-
-    return tableTreasures[tableTreasures.size - 1][weights.size - 1]
+    return getTreasures(tableTotal, treases)
 }
