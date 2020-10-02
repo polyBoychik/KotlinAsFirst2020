@@ -114,12 +114,14 @@ fun countIgnoreCase(needle: String, haystack: String): Int {
 fun countSubstrings(inputName: String, substrings: List<String>): Map<String, Int> {
     val entries: MutableMap<String, Int> = mutableMapOf()
 
-    for (str in substrings)
+    val subs = substrings.toSet()
+
+    for (str in subs)
         entries[str] = 0
 
     val reader = File(inputName).bufferedReader()
     reader.forEachLine {
-        for (str in substrings)
+        for (str in subs)
             entries[str] = entries[str]!! + countIgnoreCase(str, it)
     }
     return entries
