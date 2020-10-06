@@ -3,6 +3,8 @@
 package lesson5.task1
 
 import lesson2.task1.segmentLength
+import lesson3.task1.gcd
+import lesson3.task1.lcm
 import lesson3.task1.pow
 import java.util.*
 
@@ -481,21 +483,17 @@ fun bagPacking(treasures: Map<String, Pair<Int, Int>>, capacity: Int): Set<Strin
     val weightList = mutableListOf<Int>()
     treasures.forEach { weightList.add(it.value.first) }
 
-    val weights = mutableListOf<Int>()
+    // Получение всех весов от минимального до вместимости рюкзака с шагом НОД всех весов
+    var gcd = weightList[0]
 
-    // Получение всех возможных комбинаций весов
-    for (i in 1 until pow(2, weightList.size)) {
-        var sum = 0
-        var vector = i
-        var idx = 0
-        while (vector > 0) {
-            if (vector % 2 != 0)
-                sum += weightList[idx]
-            vector /= 2
-            idx++
-        }
-        if (sum <= capacity && !weights.contains(sum))
-            weights.add(sum)
+    for (i in weightList) {
+        gcd = gcd(gcd, i)
+    }
+
+    val weights = mutableListOf<Int>()
+    val minWeight = weightList.minOrNull()!!
+    for (i in minWeight..capacity step gcd) {
+        weights.add(i)
     }
     weights.sort()
 
@@ -514,7 +512,7 @@ fun bagPacking(treasures: Map<String, Pair<Int, Int>>, capacity: Int): Set<Strin
     // 0: cost, 1: row, 2: column with previous treasures
     val tableTotal: Array<Array<Array<Int>>> = Array(treases.size) { Array(weights.size) { arrayOf(0, -1, -1) } }
 
-    // Заполнение первой строки одним сокровищем, если оно вмещается
+    // Заполнение первой строки одним сокровищем
     for (weight in weights.indices) {
         tableTotal[0][weight][0] = treases[0].second.second
     }

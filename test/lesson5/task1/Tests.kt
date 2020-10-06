@@ -485,6 +485,47 @@ class Tests {
         )
 
         assertEquals(
+            setOf("0"),
+            bagPacking(
+                mapOf(
+                    "0" to (1 to 1),
+                    "1" to (1 to 1),
+                    "2" to (1 to 1),
+                    "3" to (1 to 1),
+                    "4" to (1 to 1),
+                    "5" to (1 to 1),
+                    "6" to (1 to 1),
+                    "7" to (1 to 1),
+                    "8" to (1 to 1),
+                    "9" to (1 to 1),
+                    "10" to (1 to 1),
+                    "11" to (1 to 1),
+                    "12" to (1 to 1),
+                    "13" to (1 to 1),
+                    "14" to (1 to 1),
+                    "15" to (1 to 1),
+                    "16" to (1 to 1),
+                    "17" to (1 to 1),
+                    "18" to (1 to 1),
+                    "19" to (1 to 1),
+                    "20" to (1 to 1),
+                    "21" to (1 to 1),
+                    "22" to (1 to 1),
+                    "23" to (1 to 1),
+                    "24" to (1 to 1),
+                    "25" to (1 to 1),
+                    "26" to (1 to 1),
+                    "27" to (1 to 1),
+                    "28" to (1 to 1),
+                    "29" to (1 to 1),
+                    "30" to (1 to 1),
+                    "31" to (1 to 1),
+                ),
+                1
+            )
+        )
+
+        assertEquals(
             setOf("Камень", "Слиток", "Кубок"),
             bagPacking(
                 mapOf(
