@@ -185,6 +185,10 @@ Basic, Ruby, Swift.
         )
         File("temp.txt").delete()
 
+        alignFileByWidth("input/empty.txt", "temp.txt")
+        assertFileContent("temp.txt", "")
+        File("temp.txt").delete()
+
     }
 
     @Test
@@ -247,6 +251,20 @@ Basic, Ruby, Swift.
             "temp.txt"
         )
         assertFileContent("temp.txt", "Zzdrавствуy,\nmyyr!!!")
+        File("temp.txt").delete()
+
+        transliterate(
+            "input/transliterate", mapOf(
+                'E' to "Ik^+jrT!T2",
+                'M' to "F+",
+                'F' to "4y}`@LOn}{",
+                '\n' to "=i[33~\"!se",
+                'D' to ".)L?W|E}UM",
+                '<' to "iKgmMb8\n@$",
+                '#' to "B"
+            ), "temp.txt"
+        )
+        assertFileContent("temp.txt", "\r=i[33~\"!se")
         File("temp.txt").delete()
     }
 

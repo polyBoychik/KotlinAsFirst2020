@@ -90,13 +90,12 @@ fun deleteMarked(inputName: String, outputName: String) {
 fun countIgnoreCase(needle: String, haystack: String): Int {
     var count = 0
 
-    var lowerHaystack = haystack.toLowerCase()
+    val lowerHaystack = haystack.toLowerCase()
     val lowerNeedle = needle.toLowerCase()
     var idx = lowerHaystack.indexOf(lowerNeedle)
     while (idx != -1) {
         count++
-        lowerHaystack = lowerHaystack.substring(idx + 1)
-        idx = lowerHaystack.indexOf(lowerNeedle)
+        idx = lowerHaystack.indexOf(lowerNeedle, idx + 1)
     }
 
     return count
@@ -112,7 +111,7 @@ fun countIgnoreCase(needle: String, haystack: String): Int {
  *
  */
 fun countSubstrings(inputName: String, substrings: List<String>): Map<String, Int> {
-    val entries: MutableMap<String, Int> = mutableMapOf()
+    val entries = mutableMapOf<String, Int>()
 
     val subs = substrings.toSet()
 
@@ -148,15 +147,13 @@ fun sibilants(inputName: String, outputName: String) {
     val writer = File(outputName).bufferedWriter()
 
     reader.forEachLine { line ->
-        var writtenLine = line
-        for (i in 0 until writtenLine.length - 1) {
-            if (writtenLine[i].toLowerCase() in dangerous)
-                if (writtenLine[i + 1] in replacements)
-                    writtenLine =
-                        writtenLine.substring(0, i + 1) + replacements[writtenLine[i + 1]] +
-                                if (i + 2 < writtenLine.length) writtenLine.substring(i + 2) else ""
+        val writtenLine: StringBuilder = StringBuilder(line)
+        for (i in 0 until line.length - 1) {
+            if (line[i].toLowerCase() in dangerous)
+                if (line[i + 1] in replacements)
+                    writtenLine[i + 1] = replacements[line[i + 1]]!!
         }
-        writer.write(writtenLine)
+        writer.write(writtenLine.toString())
         writer.newLine()
     }
 
@@ -198,7 +195,6 @@ fun centerFile(inputName: String, outputName: String) {
         writer.newLine()
     }
 
-    reader.close()
     writer.close()
 }
 
@@ -240,15 +236,17 @@ fun removeRedundantSpaces(str: String): String {
  */
 fun alignFileByWidth(inputName: String, outputName: String) {
     val reader = File(inputName).bufferedReader()
-    val writer = File(outputName).bufferedWriter()
 
     val lines = reader.readLines().toMutableList()
 
     for (idx in lines.indices) {
         lines[idx] = removeRedundantSpaces(lines[idx])
     }
+    val writer = File(outputName).bufferedWriter()
 
-    val maxLineLen = lines.maxOf { it.length }
+    // Если файл пуст, функция завершается закрытием файла
+    val maxLineLen = lines.maxOfOrNull { it.length } ?: return writer.close()
+
 
     lines.forEach {
         val split = it.split(" ")
@@ -267,8 +265,6 @@ fun alignFileByWidth(inputName: String, outputName: String) {
         }
         writer.newLine()
     }
-
-    reader.close()
     writer.close()
 }
 
@@ -295,7 +291,7 @@ fun alignFileByWidth(inputName: String, outputName: String) {
 fun top20Words(inputName: String): Map<String, Int> {
     val reader = File(inputName).bufferedReader()
 
-    var top = mutableMapOf<String, Int>()
+    val top = mutableMapOf<String, Int>()
 
     val lines = reader.readLines()
 
@@ -313,22 +309,12 @@ fun top20Words(inputName: String): Map<String, Int> {
         }
     }
 
-    top = top.toList().sortedByDescending { it.second }.toMap().toMutableMap()
+    val sortedTopList = top.toList().sortedByDescending { it.second }
 
-    val removeList = mutableListOf<String>()
-    var pos = 1
-    var price = 0
-    for ((key, value) in top) {
-        if (pos == 20)
-            price = value
-        if (pos > 20) {
-            if (value != price)
-                removeList.add(key)
-        }
-        pos++
-    }
-
-    return top.minus(removeList)
+    return if (top.size > 20)
+        sortedTopList.take(20).toMap() + top.filter { it.value == sortedTopList[19].second }
+    else
+        sortedTopList.take(20).toMap()
 }
 
 /**
@@ -370,27 +356,22 @@ fun transliterate(inputName: String, dictionary: Map<Char, String>, outputName: 
     val reader = File(inputName).bufferedReader()
     val writer = File(outputName).bufferedWriter()
 
-    var str: String
-    reader.forEachLine { line ->
-        str = line
-        var idx = 0
-        while (idx < str.length) {
-            var replacement = dictionary[str[idx].toLowerCase()] ?: dictionary[str[idx].toUpperCase()]
-            if (replacement != null) {
+    while (reader.ready()) {
+        val char = reader.read().toChar()
+        var replacement = dictionary[char.toLowerCase()] ?: dictionary[char.toUpperCase()]
+        if (replacement != null) {
 
-                replacement = if (str[idx].isUpperCase())
-                    replacement.toLowerCase().capitalize()
-                else
-                    replacement.toLowerCase()
+            replacement = if (char.isUpperCase())
+                replacement.toLowerCase().capitalize()
+            else
+                replacement.toLowerCase()
 
-                str = str.slice(0 until idx) + replacement + str.slice(idx + 1 until str.length)
-                idx += replacement.length
-            } else idx++
+            writer.write(replacement)
+
+        } else {
+            writer.write(char.toInt())
         }
-        writer.write(str)
-        writer.newLine()
     }
-
     reader.close()
     writer.close()
 }
