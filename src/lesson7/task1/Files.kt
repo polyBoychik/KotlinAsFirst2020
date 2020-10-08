@@ -188,7 +188,7 @@ fun centerFile(inputName: String, outputName: String) {
     val writer = File(outputName).bufferedWriter()
 
     val lines = reader.readLines()
-    val maxLineLen = lines.maxOf { it.trim().length }
+    val maxLineLen = lines.maxOfOrNull { it.trim().length } ?: return writer.close()
 
     lines.forEach {
         writer.write(alignedToCenter(it, maxLineLen))
@@ -366,9 +366,11 @@ fun transliterate(inputName: String, dictionary: Map<Char, String>, outputName: 
             else
                 replacement.toLowerCase()
 
+            println("write: $replacement")
             writer.write(replacement)
 
         } else {
+            println("write: ${char.toInt()}")
             writer.write(char.toInt())
         }
     }
@@ -411,9 +413,9 @@ fun chooseLongestChaoticWord(inputName: String, outputName: String) {
         if (word.length > longestLen && word.length == word.toLowerCase().toSet().size) {
             longestLen = word.length
             longests.clear()
-            longests.add(word.toLowerCase().capitalize())
+            longests.add(word)
         } else if (word.length == longestLen && word.length == word.toLowerCase().toSet().size) {
-            longests.add(word.toLowerCase().capitalize())
+            longests.add(word)
         }
     }
     if (longests.size > 0)
@@ -483,10 +485,14 @@ fun markdownToHtmlSimple(inputName: String, outputName: String) {
     writer.write("<html><body><p>")
     reader.forEachLine { line ->
         if (line == "") {
-            writer.write("</p>")
-            writer.newLine()
-            writer.write("<p>")
+            if (tags.isEmpty() || tags.isNotEmpty() && tags.peek() != "<p>") {
+                writer.write("</p>")
+                tags.push("<p>")
+                writer.newLine()
+            }
         } else {
+            if (tags.isNotEmpty() && tags.peek() == "<p>")
+                writer.write(tags.pop())
             var currentLine = line
             do {
                 var min = currentLine.length
