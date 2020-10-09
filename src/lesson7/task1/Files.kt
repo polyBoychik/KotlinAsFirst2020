@@ -531,20 +531,27 @@ fun markdownToHtmlSimple(inputName: String, outputName: String) {
     val stack: Stack<String> = Stack()
 
     writer.write("<html><body><p>")
+    stack.push("</html>")
+    stack.push("</body>")
+
     reader.forEachLine { line ->
         if (line.trim() == "") {
-            if (stack.isEmpty() || stack.isNotEmpty() && stack.peek() != "<p>") {
-                writer.write("</p>")
-                stack.push("<p>")
-                writer.newLine()
+            if (stack.peek() != "</p>") {
+                stack.push("</p>")
             }
         } else {
-            if (stack.isNotEmpty() && stack.peek() == "<p>")
+            if (stack.peek() == "</p>") {
                 writer.write(stack.pop())
+                writer.write("<p>")
+            }
             writer.write(mdFormatToHtml(line, stack))
         }
     }
-    writer.write("</p></body></html>")
+
+    if (!stack.contains("</p>"))
+        writer.write("</p>")
+    while (stack.isNotEmpty())
+        writer.write(stack.pop())
 
     reader.close()
     writer.close()
@@ -753,20 +760,22 @@ fun markdownToHtml(inputName: String, outputName: String) {
     var nesting = -1
 
     writer.write("<html><body><p>")
+    stack.push("</html>")
+    stack.push("</body>")
     reader.forEachLine {
         val trimmedLine = it.trim()
         // closing of paragraph and skip empty string
         if (trimmedLine == "") {
-            if (stack.isEmpty() || stack.isNotEmpty() && stack.peek() != "<p>") {
-                writer.write("</p>")
-                while (stack.isNotEmpty())
+            if ((stack.peek() == "</body>" || stack.peek() == "</p>")) {
+                while (stack.peek() != "</body>")
                     writer.write(stack.pop())
-                stack.push("<p>")
+                stack.push("</p>")
             }
         } else {
             // paragraph's beginning
-            if (stack.isNotEmpty() && stack.peek() == "<p>") {
+            if (stack.isNotEmpty() && stack.peek() == "</p>") {
                 writer.write(stack.pop())
+                writer.write("<p>")
             }
 
             val spacesStart = getLeadSpaces(it)
@@ -810,9 +819,10 @@ fun markdownToHtml(inputName: String, outputName: String) {
         }
     }
 
+    if (!stack.contains("</p>"))
+        stack.add(stack.indexOf("</body>") + 1, "</p>")
     while (stack.isNotEmpty())
         writer.write(stack.pop())
-    writer.write("</p></body></html>")
 
     reader.close()
     writer.close()
