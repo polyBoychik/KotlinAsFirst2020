@@ -2,9 +2,7 @@
 
 package lesson7.task1
 
-import lesson4.task1.roman
 import java.io.File
-import java.lang.Integer.min
 import java.util.*
 
 // Урок 7: работа с файлами
@@ -429,6 +427,59 @@ fun chooseLongestChaoticWord(inputName: String, outputName: String) {
 }
 
 /**
+ * Возвращает пару (pattern, index), где pattern - первый встреченный шаблон из patterns в строке line[start:],
+ * с индексом index
+ */
+fun getNearestLabel(start: Int, line: String, patterns: Collection<String>): Pair<String, Int> {
+    var min = line.length
+    var case = ""
+    for (key in patterns) {
+        val idx = line.indexOf(key, start)
+        if (idx != -1 && idx < min) {
+            min = idx
+            case = key
+        }
+    }
+    return Pair(case, min)
+}
+
+/**
+ * Возвращает строку, преобразованную из markdown в html (содержащую только выделения текста)
+ */
+fun mdFormatToHtml(line: String, stack: Stack<String>): String {
+    // by priority: highest >> >> >> least
+    val rulesOpen = mapOf("**" to "<b>", "*" to "<i>", "~~" to "<s>")
+    val rulesClose = mapOf("**" to "</b>", "*" to "</i>", "~~" to "</s>")
+
+    val lineBuilder = StringBuilder(line)
+
+    var idx = 0
+    do {
+        var case: String
+        val nearest = getNearestLabel(idx, lineBuilder.toString(), rulesOpen.keys)
+        case = nearest.first
+        idx = nearest.second
+
+        if (case != "") {
+            val replacement: String?
+            if (stack.isNotEmpty() && stack.peek() == case) {
+                replacement = rulesClose[stack.pop()]
+            } else if (stack.isNotEmpty() && stack.contains(case)) {
+                case = stack.peek()
+                replacement = rulesClose[stack.pop()]
+            } else {
+                stack.push(case)
+                replacement = rulesOpen[case]
+            }
+            lineBuilder.replace(idx, idx + case.length, replacement)
+            idx += replacement?.length ?: 0
+        }
+
+    } while (case != "")
+    return lineBuilder.toString()
+}
+
+/**
  * Сложная (22 балла)
  *
  * Реализовать транслитерацию текста в заданном формате разметки в формат разметки HTML.
@@ -477,45 +528,20 @@ fun markdownToHtmlSimple(inputName: String, outputName: String) {
     val reader = File(inputName).bufferedReader()
     val writer = File(outputName).bufferedWriter()
 
-    val rulesOpen = mapOf("**" to "<b>", "*" to "<i>", "~~" to "<s>")
-    val rulesClose = mapOf("**" to "</b>", "*" to "</i>", "~~" to "</s>")
-
-    val tags: Stack<String> = Stack()
+    val stack: Stack<String> = Stack()
 
     writer.write("<html><body><p>")
     reader.forEachLine { line ->
-        if (line == "") {
-            if (tags.isEmpty() || tags.isNotEmpty() && tags.peek() != "<p>") {
+        if (line.trim() == "") {
+            if (stack.isEmpty() || stack.isNotEmpty() && stack.peek() != "<p>") {
                 writer.write("</p>")
-                tags.push("<p>")
+                stack.push("<p>")
                 writer.newLine()
             }
         } else {
-            if (tags.isNotEmpty() && tags.peek() == "<p>")
-                writer.write(tags.pop())
-            var currentLine = line
-            do {
-                var min = currentLine.length
-                var char = ""
-                for ((key, _) in rulesOpen) {
-                    val idx = currentLine.indexOf(key)
-                    if (idx != -1 && idx < min) {
-                        min = idx
-                        char = key
-                    }
-                }
-                if (char != "") {
-                    writer.write(currentLine.slice(0 until min))
-                    if (tags.isNotEmpty() && tags.peek() == char) {
-                        tags.pop()
-                        writer.write(rulesClose[char]!!)
-                    } else {
-                        tags.push(char)
-                        writer.write(rulesOpen[char]!!)
-                    }
-                } else writer.write(currentLine)
-                currentLine = currentLine.slice(min + char.length until currentLine.length)
-            } while (char != "")
+            if (stack.isNotEmpty() && stack.peek() == "<p>")
+                writer.write(stack.pop())
+            writer.write(mdFormatToHtml(line, stack))
         }
     }
     writer.write("</p></body></html>")
@@ -716,66 +742,81 @@ fun markdownToHtmlLists(inputName: String, outputName: String) {
  *
  */
 fun markdownToHtml(inputName: String, outputName: String) {
-    TODO()
-//    val indent = 4  // in spaces
-//
-//    val reader = File(inputName).bufferedReader()
-//    val writer = File(outputName).bufferedWriter()
-//
-//    // для обозначения того, что в текущий момент уровень вложенности минимальный
-//    var nesting = -1
-//
-//    val listStack = Stack<String>()
-//
-//    writer.write("<html><body><p>")
-//    listStack.push("</p>")
-//
-//    reader.forEachLine {
-//        if (it == "") {
-//            while (listStack.isNotEmpty())
-//                writer.write(listStack.pop())
-//
-//            writer.write("<p>")
-//            listStack.push("</p>")
-//            nesting = -1
-//        } else {
-//            val currentIndent = getLeadSpaces(it) / indent
-//
-//            var line = it.trimStart()
-//
-//            when {
-//                currentIndent > nesting -> {
-//                    if (line[0] == '*') {
-//                        listStack.push("</ul>")
-//                        listStack.push("</li>")
-//                        line = "<ul><li>" + getUnOrderedListElement(line)
-//                    } else {
-//                        listStack.push("</ol>")
-//                        listStack.push("</li>")
-//                        line = "<ol><li>" + getOrderedListElement(line)
-//                    }
-//                    nesting++
-//                }
-//                currentIndent == nesting -> {
-//                    line = listStack.pop() + "<li>" + getListElement(line)
-//                    listStack.push("</li>")
-//                }
-//                else -> {
-//                    line = listStack.pop() + listStack.pop() + listStack.pop() + "<li>" + getListElement(line)
-//                    listStack.push("</li>")
-//                    nesting--
-//                }
-//            }
-//            writer.write(line)
-//        }
-//    }
-//
-//    while (listStack.isNotEmpty())
-//        writer.write(listStack.pop())
-//
-//    writer.write("</body></html>")
-//    reader.close()
-//    writer.close()
+    // list nesting identifier
+    val indent = 4  // in spaces
+
+    val reader = File(inputName).bufferedReader()
+    val writer = File(outputName).bufferedWriter()
+
+    val stack = Stack<String>()
+
+    var nesting = -1
+
+    writer.write("<html><body><p>")
+    reader.forEachLine {
+        val trimmedLine = it.trim()
+        // closing of paragraph and skip empty string
+        if (trimmedLine == "") {
+            if (stack.isEmpty() || stack.isNotEmpty() && stack.peek() != "<p>") {
+                writer.write("</p>")
+                while (stack.isNotEmpty())
+                    writer.write(stack.pop())
+                stack.push("<p>")
+            }
+        } else {
+            // paragraph's beginning
+            if (stack.isNotEmpty() && stack.peek() == "<p>") {
+                writer.write(stack.pop())
+            }
+
+            val spacesStart = getLeadSpaces(it)
+            if (spacesStart % indent == 0) {
+                val currentNesting = spacesStart / indent
+
+                // Suspicion of list
+                if (trimmedLine[0] == '*' || Regex("""\d+.""").find(trimmedLine)?.range?.first == 0) {
+                    when {
+                        // current nesting
+                        currentNesting == nesting -> {
+                            writer.write(stack.pop() + "<li>" + mdFormatToHtml(getListElement(trimmedLine), stack))
+                            stack.push("</li>")
+                        }
+                        // lower nesting level
+                        currentNesting < nesting -> {
+                            writer.write(stack.pop() + stack.pop() + stack.pop() + "<li>" + mdFormatToHtml(getListElement(trimmedLine), stack))
+                            stack.push("</li>")
+                            nesting--
+                        }
+                        // more nesting level
+                        else -> {
+                            if (trimmedLine[0] == '*') {
+                                stack.push("</ul>")
+                                stack.push("</li>")
+                                writer.write("<ul><li>" + mdFormatToHtml(getUnOrderedListElement(trimmedLine), stack))
+                            } else {
+                                stack.push("</ol>")
+                                stack.push("</li>")
+                                writer.write("<ol><li>" + mdFormatToHtml(getOrderedListElement(trimmedLine), stack))
+                            }
+                            nesting++
+                        }
+                    }
+                    // Line is not list
+                } else {
+                    writer.write(mdFormatToHtml(trimmedLine, stack))
+                }
+
+            }
+        }
+    }
+
+    while (stack.isNotEmpty())
+        writer.write(stack.pop())
+    writer.write("</p></body></html>")
+
+    reader.close()
+    writer.close()
+
 }
 
 /**
@@ -784,27 +825,28 @@ fun markdownToHtml(inputName: String, outputName: String) {
  * Вывести в выходной файл процесс умножения столбиком числа lhv (> 0) на число rhv (> 0).
  *
  * Пример (для lhv == 19935, rhv == 111):
-19935
- *    111
+   19935
+ *   111
 --------
-19935
+   19935
 + 19935
 +19935
 --------
-2212785
+ 2212785
  * Используемые пробелы, отступы и дефисы должны в точности соответствовать примеру.
  * Нули в множителе обрабатывать так же, как и остальные цифры:
-235
+   235
  *  10
 -----
-0
+     0
 +235
 -----
-2350
+  2350
  *
  */
 fun printMultiplicationProcess(lhv: Int, rhv: Int, outputName: String) {
     TODO()
+//    val writer = File(outputName).bufferedWriter()
 }
 
 

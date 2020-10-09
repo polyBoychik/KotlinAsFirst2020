@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.util.*
 
 class Tests {
 
@@ -368,6 +369,15 @@ Basic, Ruby, Swift.
 
         markdownToHtml("input/markdown_lists.md", "temp.html")
         checkHtmlListsExample()
+    }
+
+    @Test
+    fun mdFormatToHtml() {
+        assertEquals("<i>hello</i>", mdFormatToHtml("*hello*", Stack<String>()))
+        assertEquals("hello", mdFormatToHtml("hello", Stack<String>()))
+        assertEquals("<b><i>hello</i></b>", mdFormatToHtml("***hello***", Stack<String>()))
+        assertEquals("<i>hello<b>world</b></i>", mdFormatToHtml("*hello**world***", Stack<String>()))
+        assertEquals("<s><b>hello</b><i>else</i></s>", mdFormatToHtml("~~**hello***else*~~", Stack<String>()))
     }
 
     @Test
