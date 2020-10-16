@@ -2,6 +2,7 @@
 
 package lesson7.task1
 
+import lesson3.task1.digitNumber
 import java.io.File
 import java.util.*
 
@@ -364,11 +365,9 @@ fun transliterate(inputName: String, dictionary: Map<Char, String>, outputName: 
             else
                 replacement.toLowerCase()
 
-            println("write: $replacement")
             writer.write(replacement)
 
         } else {
-            println("write: ${char.toInt()}")
             writer.write(char.toInt())
         }
     }
@@ -416,13 +415,8 @@ fun chooseLongestChaoticWord(inputName: String, outputName: String) {
             longests.add(word)
         }
     }
-    if (longests.size > 0)
-        writer.write(longests[0])
-    for (i in 1 until longests.size) {
-        writer.write(", ${longests[i]}")
-    }
-
     reader.close()
+    writer.write(longests.joinToString(separator = ", "))
     writer.close()
 }
 
@@ -525,35 +519,30 @@ Suspendisse <s>et elit in enim tempus iaculis</s>.
  * (Отступы и переносы строк в примере добавлены для наглядности, при решении задачи их реализовывать не обязательно)
  */
 fun markdownToHtmlSimple(inputName: String, outputName: String) {
-    val reader = File(inputName).bufferedReader()
+    val mdLines = File(inputName).bufferedReader().readLines().dropWhile { it.trim() == "" }.dropLastWhile { it.trim() == "" }
     val writer = File(outputName).bufferedWriter()
-
     val stack: Stack<String> = Stack()
 
-    writer.write("<html><body><p>")
-    stack.push("</html>")
-    stack.push("</body>")
+    writer.write("<html><body>")
 
-    reader.forEachLine { line ->
+    mdLines.forEach { line ->
         if (line.trim() == "") {
-            if (stack.peek() != "</p>") {
-                stack.push("</p>")
+            if (stack.isNotEmpty() && stack.peek() == "</p>") {
+                writer.write(stack.pop())
             }
         } else {
-            if (stack.peek() == "</p>") {
-                writer.write(stack.pop())
+            if (stack.isEmpty()) {
+                stack.push("</p>")
                 writer.write("<p>")
             }
             writer.write(mdFormatToHtml(line, stack))
         }
     }
 
-    if (!stack.contains("</p>"))
-        writer.write("</p>")
     while (stack.isNotEmpty())
         writer.write(stack.pop())
 
-    reader.close()
+    writer.write("</body></html>")
     writer.close()
 }
 
@@ -752,29 +741,26 @@ fun markdownToHtml(inputName: String, outputName: String) {
     // list nesting identifier
     val indent = 4  // in spaces
 
-    val reader = File(inputName).bufferedReader()
+    val mdLines = File(inputName).bufferedReader().readLines().dropWhile { it.trim() == "" }.dropLastWhile { it.trim() == "" }
     val writer = File(outputName).bufferedWriter()
 
     val stack = Stack<String>()
 
     var nesting = -1
 
-    writer.write("<html><body><p>")
-    stack.push("</html>")
-    stack.push("</body>")
-    reader.forEachLine {
+    writer.write("<html><body>")
+    mdLines.forEach {
         val trimmedLine = it.trim()
         // closing of paragraph and skip empty string
         if (trimmedLine == "") {
-            if ((stack.peek() == "</body>" || stack.peek() == "</p>")) {
-                while (stack.peek() != "</body>")
-                    writer.write(stack.pop())
-                stack.push("</p>")
+            nesting = -1
+            while (stack.isNotEmpty()) {
+                writer.write(stack.pop())
             }
         } else {
             // paragraph's beginning
-            if (stack.isNotEmpty() && stack.peek() == "</p>") {
-                writer.write(stack.pop())
+            if (stack.isEmpty()) {
+                stack.push("</p>")
                 writer.write("<p>")
             }
 
@@ -819,12 +805,10 @@ fun markdownToHtml(inputName: String, outputName: String) {
         }
     }
 
-    if (!stack.contains("</p>"))
-        stack.add(stack.indexOf("</body>") + 1, "</p>")
     while (stack.isNotEmpty())
         writer.write(stack.pop())
 
-    reader.close()
+    writer.write("</body></html>")
     writer.close()
 
 }
@@ -835,27 +819,28 @@ fun markdownToHtml(inputName: String, outputName: String) {
  * Вывести в выходной файл процесс умножения столбиком числа lhv (> 0) на число rhv (> 0).
  *
  * Пример (для lhv == 19935, rhv == 111):
-   19935
+19935
  *   111
 --------
-   19935
+19935
 + 19935
 +19935
 --------
- 2212785
+2212785
  * Используемые пробелы, отступы и дефисы должны в точности соответствовать примеру.
  * Нули в множителе обрабатывать так же, как и остальные цифры:
-   235
+235
  *  10
 -----
-     0
+0
 +235
 -----
-  2350
+2350
  *
  */
 fun printMultiplicationProcess(lhv: Int, rhv: Int, outputName: String) {
     TODO()
+//    val multiplication = MutableList(5 + digitNumber(rhv)) { StringBuilder() }
 //    val writer = File(outputName).bufferedWriter()
 }
 
