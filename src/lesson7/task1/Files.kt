@@ -3,7 +3,11 @@
 package lesson7.task1
 
 import lesson3.task1.digitNumber
+import lesson3.task1.pow
+import lesson3.task1.revert
 import java.io.File
+import java.lang.Integer.max
+import java.lang.Integer.min
 import java.util.*
 
 // Урок 7: работа с файлами
@@ -519,7 +523,8 @@ Suspendisse <s>et elit in enim tempus iaculis</s>.
  * (Отступы и переносы строк в примере добавлены для наглядности, при решении задачи их реализовывать не обязательно)
  */
 fun markdownToHtmlSimple(inputName: String, outputName: String) {
-    val mdLines = File(inputName).bufferedReader().readLines().dropWhile { it.trim() == "" }.dropLastWhile { it.trim() == "" }
+    val mdLines =
+        File(inputName).bufferedReader().readLines().dropWhile { it.trim() == "" }.dropLastWhile { it.trim() == "" }
     val writer = File(outputName).bufferedWriter()
     val stack: Stack<String> = Stack()
 
@@ -741,7 +746,8 @@ fun markdownToHtml(inputName: String, outputName: String) {
     // list nesting identifier
     val indent = 4  // in spaces
 
-    val mdLines = File(inputName).bufferedReader().readLines().dropWhile { it.trim() == "" }.dropLastWhile { it.trim() == "" }
+    val mdLines =
+        File(inputName).bufferedReader().readLines().dropWhile { it.trim() == "" }.dropLastWhile { it.trim() == "" }
     val writer = File(outputName).bufferedWriter()
 
     val stack = Stack<String>()
@@ -778,7 +784,12 @@ fun markdownToHtml(inputName: String, outputName: String) {
                         }
                         // lower nesting level
                         currentNesting < nesting -> {
-                            writer.write(stack.pop() + stack.pop() + stack.pop() + "<li>" + mdFormatToHtml(getListElement(trimmedLine), stack))
+                            writer.write(
+                                stack.pop() + stack.pop() + stack.pop() + "<li>" + mdFormatToHtml(
+                                    getListElement(trimmedLine),
+                                    stack
+                                )
+                            )
                             stack.push("</li>")
                             nesting--
                         }
@@ -820,7 +831,7 @@ fun markdownToHtml(inputName: String, outputName: String) {
  *
  * Пример (для lhv == 19935, rhv == 111):
 19935
- *   111
+ *    111
 --------
 19935
 + 19935
@@ -839,9 +850,52 @@ fun markdownToHtml(inputName: String, outputName: String) {
  *
  */
 fun printMultiplicationProcess(lhv: Int, rhv: Int, outputName: String) {
-    TODO()
-//    val multiplication = MutableList(5 + digitNumber(rhv)) { StringBuilder() }
-//    val writer = File(outputName).bufferedWriter()
+    // 5 = 2 lines are for factors, 2 lines are for parts dividers (---), 1 line is for result
+    val divisorLen = digitNumber(rhv)
+    val mulTable = MutableList(5 + divisorLen) { StringBuilder() }
+
+    // add factors
+    mulTable[0].append(lhv.toString().reversed())
+    mulTable[1].append(rhv.toString().reversed())
+
+    // add addendums
+    for (i in 0 until divisorLen) {
+        mulTable[3 + i].append(" ".repeat(i) + (lhv * (rhv / pow(10, i) % 10)).toString().reversed())
+    }
+
+    // add pluses to lines from second to last addendums
+    for (i in 4..divisorLen + 2) {
+        mulTable[i].append(" ".repeat(mulTable[divisorLen + 2].length - mulTable[i].length) + "+")
+    }
+
+    // add result line
+    mulTable.last().append((lhv * rhv).toString().reversed())
+
+    var lineLen = mulTable.maxOf { it.length }
+
+    // add "*" symbol
+    mulTable[1].append(
+        " ".repeat(
+            maxOf(
+                lineLen - mulTable[1].length - 1,
+                mulTable[0].length - mulTable[1].length
+            )
+        ) + "*"
+    )
+    if (mulTable[1].length > lineLen)
+        lineLen = mulTable[1].length
+
+    // add dividers (----)
+    mulTable[2].append("-".repeat(lineLen))
+    mulTable[mulTable.lastIndex - 1].append("-".repeat(lineLen))
+
+    val writer = File(outputName).bufferedWriter()
+    for (str in mulTable) {
+        // drop ladders of spaces in factors' tails
+        writer.write(" ".repeat(lineLen - str.length) + str.reverse().dropLastWhile { it == ' ' })
+        writer.newLine()
+    }
+    writer.close()
 }
 
 
@@ -851,21 +905,79 @@ fun printMultiplicationProcess(lhv: Int, rhv: Int, outputName: String) {
  * Вывести в выходной файл процесс деления столбиком числа lhv (> 0) на число rhv (> 0).
  *
  * Пример (для lhv == 19935, rhv == 22):
-19935 | 22
+ 19935 | 22
 -198     906
 ----
-13
--0
---
-135
--132
-----
-3
+  13
+  -0
+  --
+  135
+ -132
+ ----
+    3
 
  * Используемые пробелы, отступы и дефисы должны в точности соответствовать примеру.
  *
  */
 fun printDivisionProcess(lhv: Int, rhv: Int, outputName: String) {
-    TODO()
+
+    fun writeSubtrahend(lines: MutableList<StringBuilder>, idx: Int, indent: Int, subtrahend: Int) {
+        lines[idx].append("${" ".repeat(indent - digitNumber(subtrahend) - 1)}-${subtrahend}")
+    }
+
+    fun writeSeparator(lines: MutableList<StringBuilder>, idx: Int, indent: Int, subtrahend: Int) {
+        lines[idx].append("${" ".repeat(indent - digitNumber(subtrahend) - 1)}${"-".repeat(digitNumber(subtrahend) + 1)}")
+    }
+
+    fun writeDifference(lines: MutableList<StringBuilder>, idx: Int, indent: Int, difference: Int) {
+        lines[idx].append("%${indent}s".format(difference))
+    }
+
+    /* 1 line is for quotient. 3 * digits of quotient are for
+       xxx
+       -yyy
+       ----   */
+    val divLines = MutableList(3 * digitNumber(lhv / rhv) + 1) { StringBuilder() }
+    divLines[0].append("$lhv")
+
+    var minuend = 0
+    var idx = 0
+    while (idx < divLines[0].length && minuend < rhv) {
+        minuend = minuend * 10 + (divLines[0][idx++] - '0')
+    }
+
+    var lineIdx = 1
+    do {
+        val subtrahend = minuend / rhv * rhv
+
+        // Отступ для первой строки, чтобы в вычитаемом вместился минус
+        if (idx - digitNumber(subtrahend) < 1) {
+            divLines[0].insert(0, " ")
+            idx++
+        }
+
+        writeSubtrahend(divLines, lineIdx++, idx, subtrahend)
+        writeSeparator(divLines, lineIdx++, idx, subtrahend)
+        writeDifference(divLines, lineIdx, idx, minuend - subtrahend)
+
+        minuend -= subtrahend
+        if (idx < divLines[0].length) {
+            divLines[lineIdx++].append(divLines[0][idx])
+            minuend = minuend * 10 + (divLines[0][idx] - '0')
+        }
+        idx++
+    } while (idx <= divLines[0].length)
+
+    // write quotient and divisor
+    divLines[1].append("${" ".repeat(divLines[0].length + 3 - divLines[1].length)}${lhv / rhv}")
+    divLines[0].append(" | $rhv")
+
+    val writer = File(outputName).bufferedWriter()
+
+    for (line in divLines) {
+        writer.write(line.toString())
+        writer.newLine()
+    }
+    writer.close()
 }
 
