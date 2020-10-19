@@ -6,6 +6,7 @@ import lesson2.task1.segmentLength
 import lesson3.task1.gcd
 import lesson3.task1.lcm
 import lesson3.task1.pow
+import ru.spbstu.wheels.sorted
 import java.util.*
 
 // Урок 5: ассоциативные массивы и множества
@@ -409,12 +410,15 @@ fun propagateHandshakes(friends: Map<String, Set<String>>): Map<String, Set<Stri
  *   findSumOfTwo(listOf(1, 2, 3), 6) -> Pair(-1, -1)
  */
 fun findSumOfTwo(list: List<Int>, number: Int): Pair<Int, Int> {
-    for (i in list.indices) {
-        for (j in i + 1 until list.size) {
-            if (list[i] + list[j] == number)
-                return Pair(i, j)
-        }
+    val numbers = mutableMapOf<Int, Int>()
+
+    for ((idx, value) in list.withIndex()) {
+        if (numbers.containsKey(number - value))
+            return Pair(idx, numbers[number - value]!!).sorted()
+        else
+            numbers[value] = idx
     }
+
     return Pair(-1, -1)
 }
 
