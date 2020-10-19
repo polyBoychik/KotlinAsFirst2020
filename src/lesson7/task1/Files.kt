@@ -863,27 +863,22 @@ fun printMultiplicationProcess(lhv: Int, rhv: Int, outputName: String) {
         mulTable[3 + i].append(" ".repeat(i) + (lhv * (rhv / pow(10, i) % 10)).toString().reversed())
     }
 
-    // add pluses to lines from second to last addendums
-    for (i in 4..divisorLen + 2) {
-        mulTable[i].append(" ".repeat(mulTable[divisorLen + 2].length - mulTable[i].length) + "+")
-    }
-
     // add result line
     mulTable.last().append((lhv * rhv).toString().reversed())
-
-    var lineLen = mulTable.maxOf { it.length }
 
     // add "*" symbol
     mulTable[1].append(
         " ".repeat(
-            maxOf(
-                lineLen - mulTable[1].length - 1,
-                mulTable[0].length - mulTable[1].length
-            )
+            mulTable.last().length - mulTable[1].length
         ) + "*"
     )
-    if (mulTable[1].length > lineLen)
-        lineLen = mulTable[1].length
+
+    // add pluses to lines from second to last addendums
+    for (i in 4..divisorLen + 2) {
+        mulTable[i].append(" ".repeat(mulTable.last().length - mulTable[i].length) + "+")
+    }
+
+    val lineLen = mulTable[1].length
 
     // add dividers (----)
     mulTable[2].append("-".repeat(lineLen))
@@ -925,8 +920,9 @@ fun printDivisionProcess(lhv: Int, rhv: Int, outputName: String) {
         lines[idx].append("${" ".repeat(indent - digitNumber(subtrahend) - 1)}-${subtrahend}")
     }
 
-    fun writeSeparator(lines: MutableList<StringBuilder>, idx: Int, indent: Int, subtrahend: Int) {
-        lines[idx].append("${" ".repeat(indent - digitNumber(subtrahend) - 1)}${"-".repeat(digitNumber(subtrahend) + 1)}")
+    fun writeSeparator(lines: MutableList<StringBuilder>, idx: Int, indent: Int, minuend: Int, subtrahend: Int) {
+        val totalLen = max(digitNumber(minuend), digitNumber(subtrahend) + 1)
+        lines[idx].append("${" ".repeat(indent - totalLen)}${"-".repeat(totalLen)}")
     }
 
     fun writeDifference(lines: MutableList<StringBuilder>, idx: Int, indent: Int, difference: Int) {
@@ -957,7 +953,7 @@ fun printDivisionProcess(lhv: Int, rhv: Int, outputName: String) {
         }
 
         writeSubtrahend(divLines, lineIdx++, idx, subtrahend)
-        writeSeparator(divLines, lineIdx++, idx, subtrahend)
+        writeSeparator(divLines, lineIdx++, idx, minuend, subtrahend)
         writeDifference(divLines, lineIdx, idx, minuend - subtrahend)
 
         minuend -= subtrahend
