@@ -3,10 +3,7 @@
 package lesson8.task1
 
 import lesson1.task1.sqr
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
+import kotlin.math.*
 
 // Урок 8: простые классы
 // Максимальное количество баллов = 40 (без очень трудных задач = 11)
@@ -82,14 +79,14 @@ data class Circle(val center: Point, val radius: Double) {
      * расстояние между их центрами минус сумма их радиусов.
      * Расстояние между пересекающимися окружностями считать равным 0.0.
      */
-    fun distance(other: Circle): Double = TODO()
+    fun distance(other: Circle): Double = max(0.0, center.distance(other.center) - radius - other.radius)
 
     /**
      * Тривиальная (1 балл)
      *
      * Вернуть true, если и только если окружность содержит данную точку НА себе или ВНУТРИ себя
      */
-    fun contains(p: Point): Boolean = TODO()
+    fun contains(p: Point): Boolean = center.distance(p) <= radius
 }
 
 /**
@@ -104,12 +101,80 @@ data class Segment(val begin: Point, val end: Point) {
 }
 
 /**
+ * Возвращает Point с координатами, равными среднему арифметическому координат points
+ */
+fun meanPoint(vararg points: Point): Point {
+    var x = 0.0
+    var y = 0.0
+
+    for (p in points) {
+        x += p.x
+        y += p.y
+    }
+
+    return Point(x / points.size, y / points.size)
+}
+
+/**
  * Средняя (3 балла)
  *
  * Дано множество точек. Вернуть отрезок, соединяющий две наиболее удалённые из них.
  * Если в множестве менее двух точек, бросить IllegalArgumentException
  */
-fun diameter(vararg points: Point): Segment = TODO()
+fun diameter(vararg points: Point): Segment {
+
+    fun getFarthestPointsPair(vararg points: Point): Pair<Point, Point> {
+        val meanPoint = meanPoint(*points)
+
+        // The farthest
+        var point1: Point
+        var p1Distance: Double
+
+        var point2: Point
+        var p2Distance: Double
+
+        p1Distance = meanPoint.distance(points[0])
+        p2Distance = meanPoint.distance(points[1])
+
+        if (p1Distance >= p2Distance) {
+            point1 = points[0]
+            point2 = points[1]
+        } else {
+            point1 = points[1]
+            point2 = points[0]
+
+            val buffer = p1Distance
+            p1Distance = p2Distance
+            p2Distance = buffer
+        }
+
+        for (i in 2 until points.size) {
+            val distToFirst = points[i].distance(point1)
+            if (distToFirst > p1Distance) {
+                point2 = point1
+                p2Distance = p1Distance
+
+                point1 = points[i]
+                p1Distance = distToFirst
+            } else {
+                val distToSecond = points[i].distance(point2)
+                if (distToSecond > p2Distance) {
+                    point2 = points[i]
+                    p2Distance = distToSecond
+                }
+            }
+
+        }
+        return Pair(point1, point2)
+    }
+
+    if (points.size < 2)
+        throw IllegalArgumentException("Not enough points")
+
+    val farthest = getFarthestPointsPair(*points)
+
+    return Segment(farthest.first, farthest.second)
+}
 
 /**
  * Простая (2 балла)
@@ -117,7 +182,11 @@ fun diameter(vararg points: Point): Segment = TODO()
  * Построить окружность по её диаметру, заданному двумя точками
  * Центр её должен находиться посередине между точками, а радиус составлять половину расстояния между ними
  */
-fun circleByDiameter(diameter: Segment): Circle = TODO()
+fun circleByDiameter(diameter: Segment): Circle =
+    Circle(
+        meanPoint(diameter.begin, diameter.end),
+        diameter.begin.distance(diameter.end) / 2
+    )
 
 /**
  * Прямая, заданная точкой point и углом наклона angle (в радианах) по отношению к оси X.
@@ -138,7 +207,25 @@ class Line private constructor(val b: Double, val angle: Double) {
      * Найти точку пересечения с другой линией.
      * Для этого необходимо составить и решить систему из двух уравнений (каждое для своей прямой)
      */
-    fun crossPoint(other: Line): Point = TODO()
+    fun crossPoint(other: Line): Point {
+        val thisSin = sin(this.angle)
+        val thisCos = cos(this.angle)
+        val otherSin = sin(other.angle)
+        val otherCos = cos(other.angle)
+
+        require(this.angle != PI / 2 || other.angle != PI / 2) { "There are infinite count of points" }
+
+        // solution of the first equation
+        val x = (-this.b * otherCos + other.b * thisCos) / (thisSin * otherCos - otherSin * thisCos)
+        // solution of the second equation
+        val y: Double
+        y = if (this.angle != PI / 2)
+            (x * thisSin + this.b) / thisCos
+        else
+            (x * otherSin + other.b) / otherCos
+
+        return Point(x, y)
+    }
 
     override fun equals(other: Any?) = other is Line && angle == other.angle && b == other.b
 
