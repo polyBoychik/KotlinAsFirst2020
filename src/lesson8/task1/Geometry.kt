@@ -116,57 +116,60 @@ fun meanPoint(vararg points: Point): Point {
 }
 
 /**
+ * Возвращает две самые удаленные точки из points
+ */
+fun getFarthestPointsPair(vararg points: Point): Pair<Point, Point> {
+    val meanPoint = meanPoint(*points)
+
+    // The farthest
+    var point1: Point
+    var p1Distance: Double
+
+    var point2: Point
+    var p2Distance: Double
+
+    p1Distance = meanPoint.distance(points[0])
+    p2Distance = meanPoint.distance(points[1])
+
+    if (p1Distance >= p2Distance) {
+        point1 = points[0]
+        point2 = points[1]
+    } else {
+        point1 = points[1]
+        point2 = points[0]
+
+        val buffer = p1Distance
+        p1Distance = p2Distance
+        p2Distance = buffer
+    }
+
+    for (i in 2 until points.size) {
+        val distToFirst = points[i].distance(point1)
+        if (distToFirst > p1Distance) {
+            point2 = point1
+            p2Distance = p1Distance
+
+            point1 = points[i]
+            p1Distance = distToFirst
+        } else {
+            val distToSecond = points[i].distance(point2)
+            if (distToSecond > p2Distance) {
+                point2 = points[i]
+                p2Distance = distToSecond
+            }
+        }
+
+    }
+    return Pair(point1, point2)
+}
+
+/**
  * Средняя (3 балла)
  *
  * Дано множество точек. Вернуть отрезок, соединяющий две наиболее удалённые из них.
  * Если в множестве менее двух точек, бросить IllegalArgumentException
  */
 fun diameter(vararg points: Point): Segment {
-
-    fun getFarthestPointsPair(vararg points: Point): Pair<Point, Point> {
-        val meanPoint = meanPoint(*points)
-
-        // The farthest
-        var point1: Point
-        var p1Distance: Double
-
-        var point2: Point
-        var p2Distance: Double
-
-        p1Distance = meanPoint.distance(points[0])
-        p2Distance = meanPoint.distance(points[1])
-
-        if (p1Distance >= p2Distance) {
-            point1 = points[0]
-            point2 = points[1]
-        } else {
-            point1 = points[1]
-            point2 = points[0]
-
-            val buffer = p1Distance
-            p1Distance = p2Distance
-            p2Distance = buffer
-        }
-
-        for (i in 2 until points.size) {
-            val distToFirst = points[i].distance(point1)
-            if (distToFirst > p1Distance) {
-                point2 = point1
-                p2Distance = p1Distance
-
-                point1 = points[i]
-                p1Distance = distToFirst
-            } else {
-                val distToSecond = points[i].distance(point2)
-                if (distToSecond > p2Distance) {
-                    point2 = points[i]
-                    p2Distance = distToSecond
-                }
-            }
-
-        }
-        return Pair(point1, point2)
-    }
 
     if (points.size < 2)
         throw IllegalArgumentException("Not enough points")
@@ -239,25 +242,34 @@ class Line private constructor(val b: Double, val angle: Double) {
 }
 
 /**
+ * Возвращает угол (в рад.) между прямой, соединяющей точки a и b, и  Ох
+ */
+fun angleBetweenPointsAndOx(a: Point, b: Point) = atan((b.y - a.y) / (b.x - a.x))
+
+/**
  * Средняя (3 балла)
  *
  * Построить прямую по отрезку
  */
-fun lineBySegment(s: Segment): Line = TODO()
+fun lineBySegment(s: Segment): Line =
+    Line(
+        s.begin,
+        if (s.end.x - s.begin.x != 0.0) (angleBetweenPointsAndOx(s.begin, s.end) + PI) % PI else PI / 2
+    )
 
 /**
  * Средняя (3 балла)
  *
  * Построить прямую по двум точкам
  */
-fun lineByPoints(a: Point, b: Point): Line = TODO()
+fun lineByPoints(a: Point, b: Point): Line = lineBySegment(Segment(a, b))
 
 /**
  * Сложная (5 баллов)
  *
  * Построить серединный перпендикуляр по отрезку или по двум точкам
  */
-fun bisectorByPoints(a: Point, b: Point): Line = TODO()
+fun bisectorByPoints(a: Point, b: Point): Line = Line(meanPoint(a, b), (angleBetweenPointsAndOx(a, b) + PI / 2) % PI)
 
 /**
  * Средняя (3 балла)
@@ -271,7 +283,25 @@ fun bisectorByPoints(a: Point, b: Point): Line = TODO()
  *
  * Если в списке менее двух окружностей, бросить IllegalArgumentException
  */
-fun findNearestCirclePair(vararg circles: Circle): Pair<Circle, Circle> = TODO()
+fun findNearestCirclePair(vararg circles: Circle): Pair<Circle, Circle> {
+    if (circles.size < 2) throw java.lang.IllegalArgumentException("Not enough circles")
+
+    var firstCircle = circles[0]
+    var secondCircle = circles[1]
+    var minDist = Double.POSITIVE_INFINITY
+    for (i in circles.indices) {
+        for (j in i + 1..circles.lastIndex) {
+            val currentDist = circles[i].distance(circles[j])
+            if (currentDist < minDist) {
+                minDist = currentDist
+                firstCircle = circles[i]
+                secondCircle = circles[j]
+            }
+        }
+    }
+
+    return Pair(firstCircle, secondCircle)
+}
 
 /**
  * Сложная (5 баллов)
@@ -282,7 +312,14 @@ fun findNearestCirclePair(vararg circles: Circle): Pair<Circle, Circle> = TODO()
  * (построить окружность по трём точкам, или
  * построить окружность, описанную вокруг треугольника - эквивалентная задача).
  */
-fun circleByThreePoints(a: Point, b: Point, c: Point): Circle = TODO()
+fun circleByThreePoints(a: Point, b: Point, c: Point): Circle {
+    val firstLine = Line(meanPoint(a, b), (angleBetweenPointsAndOx(a, b) + PI / 2) % PI)
+    val secondLine = Line(meanPoint(b, c), (angleBetweenPointsAndOx(b, c) + PI / 2) % PI)
+
+    val center = firstLine.crossPoint(secondLine)
+
+    return Circle(center, center.distance(a))
+}
 
 /**
  * Очень сложная (10 баллов)
@@ -295,5 +332,37 @@ fun circleByThreePoints(a: Point, b: Point, c: Point): Circle = TODO()
  * три точки данного множества, либо иметь своим диаметром отрезок,
  * соединяющий две самые удалённые точки в данном множестве.
  */
-fun minContainingCircle(vararg points: Point): Circle = TODO()
+fun minContainingCircle(vararg points: Point): Circle {
+    if (points.isEmpty()) throw IllegalArgumentException("Parameter's list hasn't be empty")
+
+    if (points.size == 1)
+        return Circle(points[0], 0.0)
+    if (points.size == 2)
+        return Circle(meanPoint(*points), points[0].distance(points[1]) / 2)
+
+    val farthestPoints = kotlin.collections.ArrayList<Point>(3)
+
+    var farthestPair = getFarthestPointsPair(*points)
+
+    farthestPoints.add(farthestPair.first)
+    farthestPoints.add(farthestPair.second)
+
+    farthestPair = getFarthestPointsPair(*points.filter { it != farthestPoints[0] }.toTypedArray())
+
+    farthestPoints.add(
+        if (farthestPair.first != farthestPoints[0] && farthestPair.first != farthestPoints[1]) farthestPair.first
+        else farthestPair.second
+    )
+
+    val c1 = circleByThreePoints(farthestPoints[0], farthestPoints[1], farthestPoints[2])
+    val c2 = Circle(meanPoint(farthestPoints[0], farthestPoints[1]), farthestPoints[0].distance(farthestPoints[1]))
+
+    if (c1.radius < c2.radius) {
+        for (p in points) {
+            if (!c1.contains(p))
+                return c2
+        }
+    }
+    return c1
+}
 

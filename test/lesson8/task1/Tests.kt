@@ -207,6 +207,7 @@ class Tests {
         assertApproxEquals(Line(Point(1.0, 1.0), PI / 4), lineBySegment(Segment(Point(1.0, 1.0), Point(3.0, 3.0))))
     }
 
+    // There is typo in the method's name:  lineByPoints
     @Test
     @Tag("3")
     fun lineByPoint() {
@@ -240,6 +241,11 @@ class Tests {
         val actual = circleByThreePoints(Point(5.0, 0.0), Point(3.0, 4.0), Point(0.0, -5.0))
         val expected = Circle(Point(0.0, 0.0), 5.0)
         assertApproxEquals(expected, actual, 1e-5)
+
+        assertApproxEquals(
+            Circle(Point(5.0, 5.0), 2.0),
+            circleByThreePoints(Point(5.0, 7.0), Point(3.0, 5.0), Point(7.0, 5.0))
+        )
     }
 
     @Test
@@ -256,5 +262,7 @@ class Tests {
         for (p in listOf(p1, p2, p3, p4, p5, p6)) {
             assertTrue(result.contains(p))
         }
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> { lesson8.task1.minContainingCircle() }
+        assertApproxEquals(Circle(p1, 0.0), minContainingCircle(p1))
     }
 }
