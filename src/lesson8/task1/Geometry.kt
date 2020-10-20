@@ -122,43 +122,26 @@ fun getFarthestPointsPair(vararg points: Point): Pair<Point, Point> {
     val meanPoint = meanPoint(*points)
 
     // The farthest
-    var point1: Point
-    var p1Distance: Double
+    var point1: Point = points[0]
+    var d1 = points[0].distance(meanPoint)
 
-    var point2: Point
-    var p2Distance: Double
-
-    p1Distance = meanPoint.distance(points[0])
-    p2Distance = meanPoint.distance(points[1])
-
-    if (p1Distance >= p2Distance) {
-        point1 = points[0]
-        point2 = points[1]
-    } else {
-        point1 = points[1]
-        point2 = points[0]
-
-        val buffer = p1Distance
-        p1Distance = p2Distance
-        p2Distance = buffer
+    for (p in points) {
+        val currentDist = p.distance(meanPoint)
+        if (p.distance(meanPoint) > d1) {
+            point1 = p
+            d1 = currentDist
+        }
     }
 
-    for (i in 2 until points.size) {
-        val distToFirst = points[i].distance(point1)
-        if (distToFirst > p1Distance) {
-            point2 = point1
-            p2Distance = p1Distance
+    var point2 = point1
+    var p2Distance = 0.0
 
-            point1 = points[i]
-            p1Distance = distToFirst
-        } else {
-            val distToSecond = points[i].distance(point2)
-            if (distToSecond > p2Distance) {
-                point2 = points[i]
-                p2Distance = distToSecond
-            }
+    for (p in points) {
+        val currentDist = p.distance(point1)
+        if (currentDist > p2Distance) {
+            point2 = p
+            p2Distance = currentDist
         }
-
     }
     return Pair(point1, point2)
 }
@@ -175,7 +158,6 @@ fun diameter(vararg points: Point): Segment {
         throw IllegalArgumentException("Not enough points")
 
     val farthest = getFarthestPointsPair(*points)
-
     return Segment(farthest.first, farthest.second)
 }
 
