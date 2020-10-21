@@ -3,6 +3,7 @@
 package lesson8.task1
 
 import lesson1.task1.sqr
+import java.util.*
 import kotlin.math.*
 
 // Урок 8: простые классы
@@ -107,9 +108,9 @@ fun meanPoint(vararg points: Point): Point {
     var x = 0.0
     var y = 0.0
 
-    for (p in points) {
-        x += p.x
-        y += p.y
+    for ((x1, y1) in points) {
+        x += x1
+        y += y1
     }
 
     return Point(x / points.size, y / points.size)
@@ -122,25 +123,37 @@ fun getFarthestPointsPair(vararg points: Point): Pair<Point, Point> {
     val meanPoint = meanPoint(*points)
 
     // The farthest
+    val farthests = LinkedList<Point>()
+    farthests.add(points[0])
+
     var point1: Point = points[0]
     var d1 = points[0].distance(meanPoint)
 
     for (p in points) {
         val currentDist = p.distance(meanPoint)
         if (p.distance(meanPoint) > d1) {
+            farthests.clear()
+            farthests.add(p)
             point1 = p
             d1 = currentDist
+        } else if (p.distance(meanPoint) == d1) {
+            farthests.add(p)
         }
     }
 
     var point2 = point1
     var p2Distance = 0.0
 
+
     for (p in points) {
-        val currentDist = p.distance(point1)
-        if (currentDist > p2Distance) {
-            point2 = p
-            p2Distance = currentDist
+        for (fpoint in farthests) {
+            val currentDist = p.distance(fpoint)
+            if (currentDist > p2Distance) {
+                point2 = p
+                p2Distance = currentDist
+
+                point1 = fpoint
+            }
         }
     }
     return Pair(point1, point2)
