@@ -256,8 +256,8 @@ fun firstDuplicateIndex(str: String): Int {
  */
 fun mostExpensive(description: String) =
     if (description.matches(Regex("""([^\s]+\s\d+(\.\d+)?;\s)*[^\s]+\s\d+(\.\d+)?${'$'}"""))) {
-        description.split("; ").map { val pair = it.split(" "); pair[0] to pair[1].toDouble() }.toMap()
-            .maxByOrNull { it.value }!!.key
+        description.split("; ").map { val pair = it.split(" "); println(pair); pair[0] to pair[1].toDouble() }
+            .maxByOrNull { println(it); it.second }!!.first
     } else ""
 
 /**

@@ -350,7 +350,7 @@ fun minContainingCircle(vararg points: Point): Circle {
     )
 
     val c1 = circleByThreePoints(farthestPoints[0], farthestPoints[1], farthestPoints[2])
-    val c2 = Circle(meanPoint(farthestPoints[0], farthestPoints[1]), farthestPoints[0].distance(farthestPoints[1]))
+    val c2 = Circle(meanPoint(farthestPoints[0], farthestPoints[1]), farthestPoints[0].distance(farthestPoints[1]) / 2)
 
     if (c1.radius < c2.radius) {
         for (p in points) {
