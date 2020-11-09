@@ -225,7 +225,7 @@ class Line private constructor(val b: Double, val angle: Double) {
         val otherSin = sin(other.angle)
         val otherCos = cos(other.angle)
 
-        require(this.angle != PI / 2 || other.angle != PI / 2) { "There are infinite count of points" }
+        require(!(this.angle == PI / 2 && other.angle == PI / 2)) { "There are infinite count of points" }
 
         // solution of the first equation
         val x = (-this.b * otherCos + other.b * thisCos) / (thisSin * otherCos - otherSin * thisCos)
@@ -363,10 +363,12 @@ fun minContainingCircle(vararg points: Point): Circle {
     for (i in convexHull.indices) {
         for (j in i + 1..convexHull.lastIndex) {
             for (k in j + 1..convexHull.lastIndex) {
-                val circle = circleByThreePoints(convexHull[i], convexHull[j], convexHull[k])
+                if (lineByPoints(convexHull[i], convexHull[j]) != lineByPoints(convexHull[i], convexHull[k])) {
+                    val circle = circleByThreePoints(convexHull[i], convexHull[j], convexHull[k])
 
-                if (circle.containsAll(convexHull) && circle.radius < minCircle.radius)
-                    minCircle = circle
+                    if (circle.containsAll(convexHull) && circle.radius < minCircle.radius)
+                        minCircle = circle
+                }
             }
         }
     }
