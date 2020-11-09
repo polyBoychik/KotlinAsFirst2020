@@ -363,7 +363,7 @@ fun minContainingCircle(vararg points: Point): Circle {
     for (i in convexHull.indices) {
         for (j in i + 1..convexHull.lastIndex) {
             for (k in j + 1..convexHull.lastIndex) {
-                if (lineByPoints(convexHull[i], convexHull[j]) != lineByPoints(convexHull[i], convexHull[k])) {
+                if (lineByPoints(convexHull[i], convexHull[j]).angle != lineByPoints(convexHull[i], convexHull[k]).angle) {
                     val circle = circleByThreePoints(convexHull[i], convexHull[j], convexHull[k])
 
                     if (circle.containsAll(convexHull) && circle.radius < minCircle.radius)
