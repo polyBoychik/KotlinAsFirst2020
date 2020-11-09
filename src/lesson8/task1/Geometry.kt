@@ -175,11 +175,9 @@ fun diameter(vararg points: Point): Segment {
 
     var diameter = 0.0
 
-    val convexHull = convexHull(points.toList())
-
-    for (i in convexHull.indices) {
-        for (j in i + 1..convexHull.lastIndex) {
-            val d = convexHull[i].distance(convexHull[j])
+    for (i in points.indices) {
+        for (j in i + 1..points.lastIndex) {
+            val d = points[i].distance(points[j])
             if (d > diameter) {
                 diameter = d
                 p1 = i
@@ -187,7 +185,7 @@ fun diameter(vararg points: Point): Segment {
             }
         }
     }
-    return Segment(convexHull[p1], convexHull[p2])
+    return Segment(points[p1], points[p2])
 }
 
 /**
