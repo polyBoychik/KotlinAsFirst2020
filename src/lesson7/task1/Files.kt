@@ -4,10 +4,8 @@ package lesson7.task1
 
 import lesson3.task1.digitNumber
 import lesson3.task1.pow
-import lesson3.task1.revert
 import java.io.File
 import java.lang.Integer.max
-import java.lang.Integer.min
 import java.util.*
 
 // Урок 7: работа с файлами

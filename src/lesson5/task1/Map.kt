@@ -2,12 +2,7 @@
 
 package lesson5.task1
 
-import lesson2.task1.segmentLength
 import lesson3.task1.gcd
-import lesson3.task1.lcm
-import lesson3.task1.pow
-import ru.spbstu.wheels.sorted
-import java.util.*
 
 // Урок 5: ассоциативные массивы и множества
 // Максимальное количество баллов = 14
@@ -414,9 +409,10 @@ fun findSumOfTwo(list: List<Int>, number: Int): Pair<Int, Int> {
 
     for ((idx, value) in list.withIndex()) {
         if (numbers.containsKey(number - value))
-            return Pair(idx, numbers[number - value]!!).sorted()
+            return Pair(numbers[number - value]!!, idx)
         else
-            numbers[value] = idx
+            if (!numbers.containsKey(value))
+                numbers[value] = idx
     }
 
     return Pair(-1, -1)

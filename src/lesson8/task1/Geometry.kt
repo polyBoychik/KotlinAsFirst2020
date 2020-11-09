@@ -88,6 +88,16 @@ data class Circle(val center: Point, val radius: Double) {
      * Вернуть true, если и только если окружность содержит данную точку НА себе или ВНУТРИ себя
      */
     fun contains(p: Point): Boolean = center.distance(p) <= radius
+
+    /**
+     * Возвращает true, если окружность содержит все точки points, иначе возвращает false
+     */
+    fun containsAll(points: List<Point>): Boolean {
+        for (p in points)
+            if (!this.contains(p))
+                return false
+        return true
+    }
 }
 
 /**
@@ -104,7 +114,7 @@ data class Segment(val begin: Point, val end: Point) {
 /**
  * Возвращает Point с координатами, равными среднему арифметическому координат points
  */
-fun meanPoint(vararg points: Point): Point {
+fun meanPoint(points: List<Point>): Point {
     var x = 0.0
     var y = 0.0
 
@@ -116,48 +126,38 @@ fun meanPoint(vararg points: Point): Point {
     return Point(x / points.size, y / points.size)
 }
 
+fun rotate(a: Point, b: Point, c: Point): Double = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)
+
 /**
- * Возвращает две самые удаленные точки из points
+ * Возвращает список точек, образующих минимальную выпуклую оболочку
+ * (Graham scan)
  */
-fun getFarthestPointsPair(vararg points: Point): Pair<Point, Point> {
-    val meanPoint = meanPoint(*points)
+fun convexHull(points: List<Point>): List<Point> {
+    var p0 = points[0]
 
-    // The farthest
-    val farthests = LinkedList<Point>()
-    farthests.add(points[0])
-
-    var point1: Point = points[0]
-    var d1 = points[0].distance(meanPoint)
-
+    // Взятие самой нижней правой точки за начальную
     for (p in points) {
-        val currentDist = p.distance(meanPoint)
-        if (p.distance(meanPoint) > d1) {
-            farthests.clear()
-            farthests.add(p)
-            point1 = p
-            d1 = currentDist
-        } else if (p.distance(meanPoint) == d1) {
-            farthests.add(p)
+        if (p.y < p0.y || p0.y == p.y && p0.x > p.x) {
+            p0 = p
         }
     }
 
-    var point2 = point1
-    var p2Distance = 0.0
+    // Сортировка точек по полярному углу
+    val sorted = points.minus(p0).sortedBy { (it.y - p0.y) / (it.x - p0.x) }
+    val pts = Stack<Point>()
+    pts.push(p0)
+    pts.push(sorted[0])
 
-
-    for (p in points) {
-        for (fpoint in farthests) {
-            val currentDist = p.distance(fpoint)
-            if (currentDist > p2Distance) {
-                point2 = p
-                p2Distance = currentDist
-
-                point1 = fpoint
-            }
+    for (p in sorted.slice(1..sorted.lastIndex)) {
+        if (rotate(pts[pts.lastIndex - 1], pts.peek(), p) < 0) {
+            pts.pop()
         }
+        pts.push(p)
     }
-    return Pair(point1, point2)
+
+    return pts.toList()
 }
+
 
 /**
  * Средняя (3 балла)
@@ -170,8 +170,24 @@ fun diameter(vararg points: Point): Segment {
     if (points.size < 2)
         throw IllegalArgumentException("Not enough points")
 
-    val farthest = getFarthestPointsPair(*points)
-    return Segment(farthest.first, farthest.second)
+    var p1 = 0
+    var p2 = 0
+
+    var diameter = 0.0
+
+    val convexHull = convexHull(points.toList())
+
+    for (i in convexHull.indices) {
+        for (j in i + 1..convexHull.lastIndex) {
+            val d = convexHull[i].distance(convexHull[j])
+            if (d > diameter) {
+                diameter = d
+                p1 = i
+                p2 = j
+            }
+        }
+    }
+    return Segment(convexHull[p1], convexHull[p2])
 }
 
 /**
@@ -182,7 +198,7 @@ fun diameter(vararg points: Point): Segment {
  */
 fun circleByDiameter(diameter: Segment): Circle =
     Circle(
-        meanPoint(diameter.begin, diameter.end),
+        meanPoint(listOf(diameter.begin, diameter.end)),
         diameter.begin.distance(diameter.end) / 2
     )
 
@@ -216,8 +232,7 @@ class Line private constructor(val b: Double, val angle: Double) {
         // solution of the first equation
         val x = (-this.b * otherCos + other.b * thisCos) / (thisSin * otherCos - otherSin * thisCos)
         // solution of the second equation
-        val y: Double
-        y = if (this.angle != PI / 2)
+        val y = if (this.angle != PI / 2)
             (x * thisSin + this.b) / thisCos
         else
             (x * otherSin + other.b) / otherCos
@@ -264,7 +279,7 @@ fun lineByPoints(a: Point, b: Point): Line = lineBySegment(Segment(a, b))
  *
  * Построить серединный перпендикуляр по отрезку или по двум точкам
  */
-fun bisectorByPoints(a: Point, b: Point): Line = Line(meanPoint(a, b), (angleBetweenPointsAndOx(a, b) + PI / 2) % PI)
+fun bisectorByPoints(a: Point, b: Point): Line = Line(meanPoint(listOf(a, b)), (angleBetweenPointsAndOx(a, b) + PI / 2) % PI)
 
 /**
  * Средняя (3 балла)
@@ -279,7 +294,7 @@ fun bisectorByPoints(a: Point, b: Point): Line = Line(meanPoint(a, b), (angleBet
  * Если в списке менее двух окружностей, бросить IllegalArgumentException
  */
 fun findNearestCirclePair(vararg circles: Circle): Pair<Circle, Circle> {
-    if (circles.size < 2) throw java.lang.IllegalArgumentException("Not enough circles")
+    if (circles.size < 2) throw IllegalArgumentException("Not enough circles")
 
     var firstCircle = circles[0]
     var secondCircle = circles[1]
@@ -308,8 +323,8 @@ fun findNearestCirclePair(vararg circles: Circle): Pair<Circle, Circle> {
  * построить окружность, описанную вокруг треугольника - эквивалентная задача).
  */
 fun circleByThreePoints(a: Point, b: Point, c: Point): Circle {
-    val firstLine = Line(meanPoint(a, b), (angleBetweenPointsAndOx(a, b) + PI / 2) % PI)
-    val secondLine = Line(meanPoint(b, c), (angleBetweenPointsAndOx(b, c) + PI / 2) % PI)
+    val firstLine = Line(meanPoint(listOf(a, b)), (angleBetweenPointsAndOx(a, b) + PI / 2) % PI)
+    val secondLine = Line(meanPoint(listOf(b, c)), (angleBetweenPointsAndOx(b, c) + PI / 2) % PI)
 
     val center = firstLine.crossPoint(secondLine)
 
@@ -333,31 +348,31 @@ fun minContainingCircle(vararg points: Point): Circle {
     if (points.size == 1)
         return Circle(points[0], 0.0)
     if (points.size == 2)
-        return Circle(meanPoint(*points), points[0].distance(points[1]) / 2)
+        return Circle(meanPoint(points.toList()), points[0].distance(points[1]) / 2)
 
-    val farthestPoints = kotlin.collections.ArrayList<Point>(3)
+    val convexHull = convexHull(points.toList())
+    var minCircle = Circle(Point(0.0, 0.0), Double.POSITIVE_INFINITY)
 
-    var farthestPair = getFarthestPointsPair(*points)
+    for (i in convexHull.indices) {
+        for (j in i + 1..convexHull.lastIndex) {
+            val circle = circleByDiameter(Segment(convexHull[i], convexHull[j]))
 
-    farthestPoints.add(farthestPair.first)
-    farthestPoints.add(farthestPair.second)
-
-    farthestPair = getFarthestPointsPair(*points.filter { it != farthestPoints[0] }.toTypedArray())
-
-    farthestPoints.add(
-        if (farthestPair.first != farthestPoints[0] && farthestPair.first != farthestPoints[1]) farthestPair.first
-        else farthestPair.second
-    )
-
-    val c1 = circleByThreePoints(farthestPoints[0], farthestPoints[1], farthestPoints[2])
-    val c2 = Circle(meanPoint(farthestPoints[0], farthestPoints[1]), farthestPoints[0].distance(farthestPoints[1]) / 2)
-
-    if (c1.radius < c2.radius) {
-        for (p in points) {
-            if (!c1.contains(p))
-                return c2
+            if (circle.containsAll(convexHull) && circle.radius < minCircle.radius)
+                minCircle = circle
         }
     }
-    return c1
+
+    for (i in convexHull.indices) {
+        for (j in i + 1..convexHull.lastIndex) {
+            for (k in j + 1..convexHull.lastIndex) {
+                val circle = circleByThreePoints(convexHull[i], convexHull[j], convexHull[k])
+
+                if (circle.containsAll(convexHull) && circle.radius < minCircle.radius)
+                    minCircle = circle
+            }
+        }
+    }
+
+    return minCircle
 }
 
