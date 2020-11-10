@@ -62,7 +62,8 @@ data class Hexagon(val center: HexPoint, val radius: Int) {
      * и другим шестиугольником B с центром в 26 и радиуоом 2 равно 2
      * (расстояние между точками 32 и 24)
      */
-    fun distance(other: Hexagon): Int = max(this.center.distance(other.center) - this.radius - other.radius, 0)
+    fun distance(other: Hexagon): Int =
+        this.center.distance(other.center) - this.radius - other.radius
 
     /**
      * Тривиальная (1 балл)

@@ -20,6 +20,7 @@ class HexTests {
     @Tag("3")
     fun hexagonDistance() {
         assertEquals(2, Hexagon(HexPoint(1, 3), 1).distance(Hexagon(HexPoint(6, 2), 2)))
+        assertEquals(1347, Hexagon(HexPoint(-999, -999), 1).distance(Hexagon(HexPoint(17, -558), 109)))
     }
 
     @Test

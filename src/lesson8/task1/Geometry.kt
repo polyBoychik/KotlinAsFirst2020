@@ -225,6 +225,8 @@ class Line private constructor(val b: Double, val angle: Double) {
         val otherSin = sin(other.angle)
         val otherCos = cos(other.angle)
 
+        println("this: $angle, other: ${other.angle}")
+
         require(!(this.angle == PI / 2 && other.angle == PI / 2)) { "There are infinite count of points" }
 
         // solution of the first equation
@@ -311,6 +313,10 @@ fun findNearestCirclePair(vararg circles: Circle): Pair<Circle, Circle> {
     return Pair(firstCircle, secondCircle)
 }
 
+// center rotation
+fun rotatedLine(a: Point, b: Point, angle: Double): Line =
+    Line(meanPoint(listOf(a, b)), (angleBetweenPointsAndOx(a, b) + angle) % PI)
+
 /**
  * Сложная (5 баллов)
  *
@@ -321,8 +327,8 @@ fun findNearestCirclePair(vararg circles: Circle): Pair<Circle, Circle> {
  * построить окружность, описанную вокруг треугольника - эквивалентная задача).
  */
 fun circleByThreePoints(a: Point, b: Point, c: Point): Circle {
-    val firstLine = Line(meanPoint(listOf(a, b)), (angleBetweenPointsAndOx(a, b) + PI / 2) % PI)
-    val secondLine = Line(meanPoint(listOf(b, c)), (angleBetweenPointsAndOx(b, c) + PI / 2) % PI)
+    val firstLine = rotatedLine(a, b, PI / 2)
+    val secondLine = rotatedLine(b, c, PI / 2)
 
     val center = firstLine.crossPoint(secondLine)
 
@@ -342,13 +348,15 @@ fun circleByThreePoints(a: Point, b: Point, c: Point): Circle {
  */
 fun minContainingCircle(vararg points: Point): Circle {
     if (points.isEmpty()) throw IllegalArgumentException("Parameter's list hasn't be empty")
+    
+    val pts = points.toSet().toList()
+    
+    if (pts.size == 1)
+        return Circle(pts[0], 0.0)
+    if (pts.size == 2)
+        return Circle(meanPoint(pts.toList()), pts[0].distance(pts[1]) / 2)
 
-    if (points.size == 1)
-        return Circle(points[0], 0.0)
-    if (points.size == 2)
-        return Circle(meanPoint(points.toList()), points[0].distance(points[1]) / 2)
-
-    val convexHull = convexHull(points.toList())
+    val convexHull = convexHull(pts.toList())
     var minCircle = Circle(Point(0.0, 0.0), Double.POSITIVE_INFINITY)
 
     for (i in convexHull.indices) {
@@ -363,7 +371,7 @@ fun minContainingCircle(vararg points: Point): Circle {
     for (i in convexHull.indices) {
         for (j in i + 1..convexHull.lastIndex) {
             for (k in j + 1..convexHull.lastIndex) {
-                if (lineByPoints(convexHull[i], convexHull[j]).angle != lineByPoints(convexHull[i], convexHull[k]).angle) {
+                if (lineByPoints(convexHull[i], convexHull[j]).angle != lineByPoints(convexHull[j], convexHull[k]).angle) {
                     val circle = circleByThreePoints(convexHull[i], convexHull[j], convexHull[k])
 
                     if (circle.containsAll(convexHull) && circle.radius < minCircle.radius)
