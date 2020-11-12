@@ -135,9 +135,9 @@ fun rotate(a: Point, b: Point, c: Point): Double = (b.x - a.x) * (c.y - b.y) - (
 fun convexHull(points: List<Point>): List<Point> {
     var p0 = points[0]
 
-    // Взятие самой нижней правой точки за начальную
+    // Взятие самой левой точки за начальную
     for (p in points) {
-        if (p.y < p0.y || p0.y == p.y && p0.x > p.x) {
+        if (p.x < p0.x) {
             p0 = p
         }
     }
@@ -149,7 +149,7 @@ fun convexHull(points: List<Point>): List<Point> {
     pts.push(sorted[0])
 
     for (p in sorted.slice(1..sorted.lastIndex)) {
-        if (rotate(pts[pts.lastIndex - 1], pts.peek(), p) < 0) {
+        while (rotate(pts[pts.lastIndex - 1], pts.peek(), p) <= 0) {
             pts.pop()
         }
         pts.push(p)
@@ -170,22 +170,46 @@ fun diameter(vararg points: Point): Segment {
     if (points.size < 2)
         throw IllegalArgumentException("Not enough points")
 
+    val convexHull = convexHull(points.toList())
+
+    var angle: Double
+    var lastAngle = 0.0
+
+    var diameter = 0.0
     var p1 = 0
     var p2 = 0
 
-    var diameter = 0.0
+    for (i in 0..convexHull.lastIndex) {
+        for (j in i + 1..i + 1 + convexHull.size) {
 
-    for (i in points.indices) {
-        for (j in i + 1..points.lastIndex) {
-            val d = points[i].distance(points[j])
-            if (d > diameter) {
-                diameter = d
-                p1 = i
-                p2 = j
+            val iNext = (i + 1) % convexHull.size
+            val jCur = j % convexHull.size
+            val jNext = (jCur + 1) % convexHull.size
+
+            val k1 = atan2(convexHull[iNext].y - convexHull[i].y, convexHull[iNext].x - convexHull[i].x)
+            val k2 = atan2(convexHull[jNext].y - convexHull[jCur].y, convexHull[jNext].x - convexHull[jCur].x)
+            angle = abs((k2 - k1) / (1 + k1 * k2))
+
+            if (PI / 2 in angle..lastAngle || PI / 2 in lastAngle..angle) {
+                val len1 = convexHull[i].distance(convexHull[jCur])
+                val len2 = convexHull[iNext].distance(convexHull[jCur])
+
+                if (len1 > diameter) {
+                    diameter = len1
+                    p1 = i
+                    p2 = jCur
+                }
+                if (len2 > diameter) {
+                    diameter = len2
+
+                    p1 = iNext
+                    p2 = jCur
+                }
             }
+            lastAngle = angle
         }
     }
-    return Segment(points[p1], points[p2])
+    return Segment(convexHull[p1], convexHull[p2])
 }
 
 /**
@@ -225,8 +249,6 @@ class Line private constructor(val b: Double, val angle: Double) {
         val otherSin = sin(other.angle)
         val otherCos = cos(other.angle)
 
-        println("this: $angle, other: ${other.angle}")
-
         require(!(this.angle == PI / 2 && other.angle == PI / 2)) { "There are infinite count of points" }
 
         // solution of the first equation
@@ -254,7 +276,7 @@ class Line private constructor(val b: Double, val angle: Double) {
 /**
  * Возвращает угол (в рад.) между прямой, соединяющей точки a и b, и  Ох
  */
-fun angleBetweenPointsAndOx(a: Point, b: Point) = atan((b.y - a.y) / (b.x - a.x))
+fun angleBetweenPointsAndOx(a: Point, b: Point) = atan2(b.y - a.y, b.x - a.x)
 
 /**
  * Средняя (3 балла)
@@ -315,7 +337,7 @@ fun findNearestCirclePair(vararg circles: Circle): Pair<Circle, Circle> {
 
 // center rotation
 fun rotatedLine(a: Point, b: Point, angle: Double): Line =
-    Line(meanPoint(listOf(a, b)), (angleBetweenPointsAndOx(a, b) + angle) % PI)
+    Line(meanPoint(listOf(a, b)), (angleBetweenPointsAndOx(a, b) + PI + angle) % PI)
 
 /**
  * Сложная (5 баллов)
