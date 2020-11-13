@@ -149,7 +149,7 @@ fun convexHull(points: List<Point>): List<Point> {
     pts.push(sorted[0])
 
     for (p in sorted.slice(1..sorted.lastIndex)) {
-        while (rotate(pts[pts.lastIndex - 1], pts.peek(), p) <= 0) {
+        while (pts.size > 1 && rotate(pts[pts.lastIndex - 1], pts.peek(), p) <= 0) {
             pts.pop()
         }
         pts.push(p)
@@ -301,7 +301,8 @@ fun lineByPoints(a: Point, b: Point): Line = lineBySegment(Segment(a, b))
  *
  * Построить серединный перпендикуляр по отрезку или по двум точкам
  */
-fun bisectorByPoints(a: Point, b: Point): Line = Line(meanPoint(listOf(a, b)), (angleBetweenPointsAndOx(a, b) + PI / 2) % PI)
+fun bisectorByPoints(a: Point, b: Point): Line =
+    Line(meanPoint(listOf(a, b)), (angleBetweenPointsAndOx(a, b) + PI / 2) % PI)
 
 /**
  * Средняя (3 балла)
@@ -370,32 +371,34 @@ fun circleByThreePoints(a: Point, b: Point, c: Point): Circle {
  */
 fun minContainingCircle(vararg points: Point): Circle {
     if (points.isEmpty()) throw IllegalArgumentException("Parameter's list hasn't be empty")
-    
+
     val pts = points.toSet().toList()
-    
+
     if (pts.size == 1)
         return Circle(pts[0], 0.0)
     if (pts.size == 2)
         return Circle(meanPoint(pts.toList()), pts[0].distance(pts[1]) / 2)
 
     val convexHull = convexHull(pts.toList())
-    var minCircle = Circle(Point(0.0, 0.0), Double.POSITIVE_INFINITY)
 
-    for (i in convexHull.indices) {
-        for (j in i + 1..convexHull.lastIndex) {
-            val circle = circleByDiameter(Segment(convexHull[i], convexHull[j]))
-
-            if (circle.containsAll(convexHull) && circle.radius < minCircle.radius)
-                minCircle = circle
-        }
-    }
+    var circle = circleByDiameter(diameter(*convexHull.toTypedArray()))
+    var minCircle = if (circle.containsAll(pts))
+        circle
+    else
+        Circle(Point(0.0, 0.0), Double.POSITIVE_INFINITY)
 
     for (i in convexHull.indices) {
         for (j in i + 1..convexHull.lastIndex) {
             for (k in j + 1..convexHull.lastIndex) {
-                if (lineByPoints(convexHull[i], convexHull[j]).angle != lineByPoints(convexHull[j], convexHull[k]).angle) {
-                    val circle = circleByThreePoints(convexHull[i], convexHull[j], convexHull[k])
-
+                // Пришлось прибегать к eps, т.к. радианы неохотно сравнивались
+                if (abs(
+                        angleBetweenPointsAndOx(convexHull[i], convexHull[j]) - angleBetweenPointsAndOx(
+                            convexHull[j],
+                            convexHull[k]
+                        )
+                    ) % PI > 1e-7
+                ) {
+                    circle = circleByThreePoints(convexHull[i], convexHull[j], convexHull[k])
                     if (circle.containsAll(convexHull) && circle.radius < minCircle.radius)
                         minCircle = circle
                 }
