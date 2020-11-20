@@ -158,6 +158,7 @@ fun convexHull(points: List<Point>): List<Point> {
     return pts.toList()
 }
 
+fun nextCycledIdx(what: Int, size: Int) = (what + 1) % size
 
 /**
  * Средняя (3 балла)
@@ -167,48 +168,87 @@ fun convexHull(points: List<Point>): List<Point> {
  */
 fun diameter(vararg points: Point): Segment {
 
+    fun angle(a: Segment, b: Segment): Double {
+        val angle =
+            PI - (atan2(b.end.y - b.begin.y, b.end.x - b.begin.x) - atan2(a.end.y - a.begin.y, a.end.x - a.begin.x))
+        return (angle % (2 * PI))
+    }
+
     if (points.size < 2)
         throw IllegalArgumentException("Not enough points")
 
     val convexHull = convexHull(points.toList())
 
-    var angle: Double
-    var lastAngle = 0.0
+    var i = 0
+    var j = 1
 
-    var diameter = 0.0
-    var p1 = 0
-    var p2 = 0
+    while (angle(
+            Segment(convexHull[i], convexHull[nextCycledIdx(i, convexHull.size)]),
+            Segment(convexHull[j], convexHull[nextCycledIdx(j, convexHull.size)])
+        ) < PI
+    ) {
+        j = nextCycledIdx(j, convexHull.size)
+    }
 
-    for (i in 0..convexHull.lastIndex) {
-        for (j in i + 1..i + 1 + convexHull.size) {
+    var p1 = i
+    var p2 = j
 
-            val iNext = (i + 1) % convexHull.size
-            val jCur = j % convexHull.size
-            val jNext = (jCur + 1) % convexHull.size
+    var diameter = convexHull[i].distance(convexHull[j])
 
-            val k1 = atan2(convexHull[iNext].y - convexHull[i].y, convexHull[iNext].x - convexHull[i].x)
-            val k2 = atan2(convexHull[jNext].y - convexHull[jCur].y, convexHull[jNext].x - convexHull[jCur].x)
-            angle = abs((k2 - k1) / (1 + k1 * k2))
+    while (j != 1) {
+        val ang = 2 * PI - angle(
+            Segment(convexHull[i], convexHull[nextCycledIdx(i, convexHull.size)]),
+            Segment(convexHull[j], convexHull[nextCycledIdx(j, convexHull.size)])
+        )
 
-            if (PI / 2 in angle..lastAngle || PI / 2 in lastAngle..angle) {
-                val len1 = convexHull[i].distance(convexHull[jCur])
-                val len2 = convexHull[iNext].distance(convexHull[jCur])
+        when {
+            ang == PI -> {
+                val a = nextCycledIdx(i, convexHull.size)
+                val b = nextCycledIdx(j, convexHull.size)
+                var d1 = convexHull[a].distance(convexHull[j])
+                if (d1 > diameter) {
+                    p1 = a
+                    p2 = j
+                    diameter = d1
+                }
 
-                if (len1 > diameter) {
-                    diameter = len1
+                d1 = convexHull[i].distance(convexHull[b])
+                if (d1 > diameter) {
                     p1 = i
-                    p2 = jCur
+                    p2 = b
+                    diameter = d1
                 }
-                if (len2 > diameter) {
-                    diameter = len2
+                d1 = convexHull[a].distance(convexHull[b])
+                if (d1 > diameter) {
+                    p1 = a
+                    p2 = b
+                    diameter = d1
+                }
 
-                    p1 = iNext
-                    p2 = jCur
-                }
+                i = nextCycledIdx(i, convexHull.size)
+                j = nextCycledIdx(j, convexHull.size)
             }
-            lastAngle = angle
+            ang < PI -> {
+                val d1 = convexHull[nextCycledIdx(i, convexHull.size)].distance(convexHull[j])
+                if (d1 > diameter) {
+                    p1 = nextCycledIdx(i, convexHull.size)
+                    p2 = j
+                    diameter = d1
+                }
+                i = nextCycledIdx(i, convexHull.size)
+            }
+            else -> {
+                val d1 = convexHull[i].distance(convexHull[nextCycledIdx(j, convexHull.size)])
+                if (d1 > diameter) {
+                    p1 = i
+                    p2 = nextCycledIdx(j, convexHull.size)
+                    diameter = d1
+                }
+                j = nextCycledIdx(j, convexHull.size)
+            }
         }
     }
+
     return Segment(convexHull[p1], convexHull[p2])
 }
 
@@ -276,7 +316,10 @@ class Line private constructor(val b: Double, val angle: Double) {
 /**
  * Возвращает угол (в рад.) между прямой, соединяющей точки a и b, и  Ох
  */
-fun angleBetweenPointsAndOx(a: Point, b: Point) = atan2(b.y - a.y, b.x - a.x)
+fun angleBetweenPointsAndOx(a: Point, b: Point): Double {
+    val angle = atan2(b.y - a.y, b.x - a.x)
+    return if (angle <= 0.0) angle + PI else angle
+}
 
 /**
  * Средняя (3 балла)
@@ -391,12 +434,13 @@ fun minContainingCircle(vararg points: Point): Circle {
         for (j in i + 1..convexHull.lastIndex) {
             for (k in j + 1..convexHull.lastIndex) {
                 // Пришлось прибегать к eps, т.к. радианы неохотно сравнивались
+
                 if (abs(
-                        angleBetweenPointsAndOx(convexHull[i], convexHull[j]) - angleBetweenPointsAndOx(
+                        lineByPoints(convexHull[i], convexHull[j]).angle - lineByPoints(
                             convexHull[j],
                             convexHull[k]
-                        )
-                    ) % PI > 1e-7
+                        ).angle
+                    ) > 1e-10
                 ) {
                     circle = circleByThreePoints(convexHull[i], convexHull[j], convexHull[k])
                     if (circle.containsAll(convexHull) && circle.radius < minCircle.radius)
