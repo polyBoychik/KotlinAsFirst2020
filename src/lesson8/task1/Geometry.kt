@@ -158,7 +158,63 @@ fun convexHull(points: List<Point>): List<Point> {
     return pts.toList()
 }
 
-fun nextCycledIdx(what: Int, size: Int) = (what + 1) % size
+fun angle(a: Segment, b: Segment): Double {
+    val angle =
+        PI - (atan2(b.end.y - b.begin.y, b.end.x - b.begin.x) - atan2(a.end.y - a.begin.y, a.end.x - a.begin.x))
+    return (angle % (2 * PI))
+}
+
+fun List<Point>.nextIdx(i: Int) = (i + 1) % this.size
+fun List<Point>.next(i: Int) = this[this.nextIdx(i)]
+
+infix fun Double.equalsAccuracy(other: Double): Boolean = abs(this - other) <= min(Math.ulp(this), Math.ulp(other))
+
+fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
+
+    val antipodals = mutableListOf<Pair<Point, Point>>()
+    var i = 0
+    var j = 1
+
+    while (angle(
+            Segment(convexHull[i], convexHull.next(i)),
+            Segment(convexHull[j], convexHull.next(j))
+        ) < PI
+    ) {
+        j = convexHull.nextIdx(j)
+    }
+
+    antipodals.add(Pair(convexHull[i], convexHull[j]))
+
+
+    while (j != 1) {
+        val ang = 2 * PI - angle(
+            Segment(convexHull[i], convexHull.next(i)),
+            Segment(convexHull[j], convexHull.next(j))
+        )
+
+        when {
+            ang equalsAccuracy PI -> {
+                val a = convexHull.nextIdx(i)
+                val b = convexHull.nextIdx(j)
+                antipodals.add(Pair(convexHull[a], convexHull[j]))
+                antipodals.add(Pair(convexHull[i], convexHull[b]))
+                antipodals.add(Pair(convexHull[a], convexHull[b]))
+
+                i = convexHull.nextIdx(i)
+                j = convexHull.nextIdx(j)
+            }
+            ang < PI -> {
+                antipodals.add(Pair(convexHull.next(i), convexHull[j]))
+                i = convexHull.nextIdx(i)
+            }
+            else -> {
+                antipodals.add(Pair(convexHull[i], convexHull.next(j)))
+                j = convexHull.nextIdx(j)
+            }
+        }
+    }
+    return antipodals
+}
 
 /**
  * Средняя (3 балла)
@@ -168,88 +224,16 @@ fun nextCycledIdx(what: Int, size: Int) = (what + 1) % size
  */
 fun diameter(vararg points: Point): Segment {
 
-    fun angle(a: Segment, b: Segment): Double {
-        val angle =
-            PI - (atan2(b.end.y - b.begin.y, b.end.x - b.begin.x) - atan2(a.end.y - a.begin.y, a.end.x - a.begin.x))
-        return (angle % (2 * PI))
-    }
-
     if (points.size < 2)
         throw IllegalArgumentException("Not enough points")
 
     val convexHull = convexHull(points.toList())
 
-    var i = 0
-    var j = 1
+    val antipodals = getAntipodalPoints(convexHull)
 
-    while (angle(
-            Segment(convexHull[i], convexHull[nextCycledIdx(i, convexHull.size)]),
-            Segment(convexHull[j], convexHull[nextCycledIdx(j, convexHull.size)])
-        ) < PI
-    ) {
-        j = nextCycledIdx(j, convexHull.size)
-    }
+    val diameter = antipodals.maxByOrNull { it.first.distance(it.second) }!!
 
-    var p1 = i
-    var p2 = j
-
-    var diameter = convexHull[i].distance(convexHull[j])
-
-    while (j != 1) {
-        val ang = 2 * PI - angle(
-            Segment(convexHull[i], convexHull[nextCycledIdx(i, convexHull.size)]),
-            Segment(convexHull[j], convexHull[nextCycledIdx(j, convexHull.size)])
-        )
-
-        when {
-            ang == PI -> {
-                val a = nextCycledIdx(i, convexHull.size)
-                val b = nextCycledIdx(j, convexHull.size)
-                var d1 = convexHull[a].distance(convexHull[j])
-                if (d1 > diameter) {
-                    p1 = a
-                    p2 = j
-                    diameter = d1
-                }
-
-                d1 = convexHull[i].distance(convexHull[b])
-                if (d1 > diameter) {
-                    p1 = i
-                    p2 = b
-                    diameter = d1
-                }
-                d1 = convexHull[a].distance(convexHull[b])
-                if (d1 > diameter) {
-                    p1 = a
-                    p2 = b
-                    diameter = d1
-                }
-
-                i = nextCycledIdx(i, convexHull.size)
-                j = nextCycledIdx(j, convexHull.size)
-            }
-            ang < PI -> {
-                val d1 = convexHull[nextCycledIdx(i, convexHull.size)].distance(convexHull[j])
-                if (d1 > diameter) {
-                    p1 = nextCycledIdx(i, convexHull.size)
-                    p2 = j
-                    diameter = d1
-                }
-                i = nextCycledIdx(i, convexHull.size)
-            }
-            else -> {
-                val d1 = convexHull[i].distance(convexHull[nextCycledIdx(j, convexHull.size)])
-                if (d1 > diameter) {
-                    p1 = i
-                    p2 = nextCycledIdx(j, convexHull.size)
-                    diameter = d1
-                }
-                j = nextCycledIdx(j, convexHull.size)
-            }
-        }
-    }
-
-    return Segment(convexHull[p1], convexHull[p2])
+    return Segment(diameter.first, diameter.second)
 }
 
 /**
@@ -422,28 +406,25 @@ fun minContainingCircle(vararg points: Point): Circle {
     if (pts.size == 2)
         return Circle(meanPoint(pts.toList()), pts[0].distance(pts[1]) / 2)
 
-    val convexHull = convexHull(pts.toList())
+//    val convexHull = convexHull(pts.toList())
 
-    var circle = circleByDiameter(diameter(*convexHull.toTypedArray()))
+    var circle = circleByDiameter(diameter(*pts.toTypedArray()))
     var minCircle = if (circle.containsAll(pts))
         circle
     else
         Circle(Point(0.0, 0.0), Double.POSITIVE_INFINITY)
 
-    for (i in convexHull.indices) {
-        for (j in i + 1..convexHull.lastIndex) {
-            for (k in j + 1..convexHull.lastIndex) {
-                // Пришлось прибегать к eps, т.к. радианы неохотно сравнивались
+    for (i in pts.indices) {
+        for (j in i + 1..pts.lastIndex) {
+            for (k in j + 1..pts.lastIndex) {
 
-                if (abs(
-                        lineByPoints(convexHull[i], convexHull[j]).angle - lineByPoints(
-                            convexHull[j],
-                            convexHull[k]
-                        ).angle
-                    ) > 1e-10
+                if (!(lineByPoints(pts[i], pts[j]).angle equalsAccuracy lineByPoints(
+                        pts[j],
+                        pts[k]
+                    ).angle)
                 ) {
-                    circle = circleByThreePoints(convexHull[i], convexHull[j], convexHull[k])
-                    if (circle.containsAll(convexHull) && circle.radius < minCircle.radius)
+                    circle = circleByThreePoints(pts[i], pts[j], pts[k])
+                    if (circle.containsAll(pts) && circle.radius < minCircle.radius)
                         minCircle = circle
                 }
             }
