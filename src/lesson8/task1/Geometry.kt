@@ -126,7 +126,15 @@ fun meanPoint(points: List<Point>): Point {
     return Point(x / points.size, y / points.size)
 }
 
-fun rotate(a: Point, b: Point, c: Point): Double = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)
+//fun rotate(a: Point, b: Point, c: Point): Double = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)
+
+fun orientation(a: Point, b: Point, c: Point): Int {
+    val value = (b.y - a.y) * (c.x - b.x) -
+            (b.x - a.x) * (c.y - b.y)
+    if (value equalsAccuracy 0.0)
+        return 0  // collinear
+    return if (value > 0) 1 else 2  // clockwise or counterclockwise
+}
 
 /**
  * Возвращает список точек, образующих минимальную выпуклую оболочку
@@ -137,19 +145,26 @@ fun convexHull(points: List<Point>): List<Point> {
 
     // Взятие самой левой точки за начальную
     for (p in points) {
-        if (p.x < p0.x) {
+        if (p.y < p0.y || p.y == p0.y && p.x < p0.x) {
             p0 = p
         }
     }
 
     // Сортировка точек по полярному углу
-    val sorted = points.minus(p0).sortedBy { (it.y - p0.y) / (it.x - p0.x) }
+    val sorted = points.minus(p0).sortedWith(Comparator { p1: Point, p2: Point ->
+        return@Comparator when (orientation(p0, p1, p2)) {
+            0 -> if (p0.distance(p2) >= p0.distance(p1)) -1 else 1
+            2 -> -1
+            else -> 1
+        }
+    })
+
     val pts = Stack<Point>()
     pts.push(p0)
     pts.push(sorted[0])
 
     for (p in sorted.slice(1..sorted.lastIndex)) {
-        while (pts.size > 1 && rotate(pts[pts.lastIndex - 1], pts.peek(), p) <= 0) {
+        while (pts.size > 1 && orientation(pts[pts.lastIndex - 1], pts.peek(), p) != 2) {
             pts.pop()
         }
         pts.push(p)
@@ -418,11 +433,7 @@ fun minContainingCircle(vararg points: Point): Circle {
         for (j in i + 1..pts.lastIndex) {
             for (k in j + 1..pts.lastIndex) {
 
-                if (!(lineByPoints(pts[i], pts[j]).angle equalsAccuracy lineByPoints(
-                        pts[j],
-                        pts[k]
-                    ).angle)
-                ) {
+                if (!(lineByPoints(pts[i], pts[j]).angle equalsAccuracy lineByPoints(pts[j], pts[k]).angle)) {
                     circle = circleByThreePoints(pts[i], pts[j], pts[k])
                     if (circle.containsAll(pts) && circle.radius < minCircle.radius)
                         minCircle = circle
