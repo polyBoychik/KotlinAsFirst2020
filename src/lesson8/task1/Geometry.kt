@@ -247,7 +247,7 @@ fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
  */
 fun diameter(vararg points: Point): Segment {
 
-    if (points.size < 2)
+    if (points.toSet().size < 2)
         throw IllegalArgumentException("Not enough points")
 
     val convexHull = convexHull(points.toList())
