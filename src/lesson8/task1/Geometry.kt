@@ -128,12 +128,16 @@ fun meanPoint(points: List<Point>): Point {
 
 //fun rotate(a: Point, b: Point, c: Point): Double = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)
 
-fun orientation(a: Point, b: Point, c: Point): Int {
+enum class Orientation {
+    COLLINEAR, CLOCKWISE, COUNTERCLOCKWISE
+}
+
+fun orientation(a: Point, b: Point, c: Point): Orientation {
     val value = (b.y - a.y) * (c.x - b.x) -
             (b.x - a.x) * (c.y - b.y)
     if (value equalsAccuracy 0.0)
-        return 0  // collinear
-    return if (value > 0) 1 else 2  // clockwise or counterclockwise
+        return Orientation.COLLINEAR
+    return if (value > 0) Orientation.CLOCKWISE else Orientation.COUNTERCLOCKWISE
 }
 
 /**
@@ -151,28 +155,28 @@ fun convexHull(points: List<Point>): List<Point> {
     }
 
     // Сортировка точек по полярному углу
-    val sorted = points.minus(p0).sortedWith(Comparator { p1: Point, p2: Point ->
-        return@Comparator when (orientation(p0, p1, p2)) {
-            0 -> {
+    val sorted = points.minus(p0).sortedWith { p1: Point, p2: Point ->
+        when (orientation(p0, p1, p2)) {
+            Orientation.COLLINEAR -> {
                 val dif = p0.distance(p2) - p0.distance(p1)
-                return@Comparator when {
+                when {
                     dif > 0.0 -> -1
                     dif == 0.0 -> 0
                     else -> 1
                 }
             }
 
-            2 -> -1
+            Orientation.COUNTERCLOCKWISE -> -1
             else -> 1
         }
-    })
+    }
 
     val pts = Stack<Point>()
     pts.push(p0)
     pts.push(sorted[0])
 
     for (p in sorted.slice(1..sorted.lastIndex)) {
-        while (pts.size > 1 && orientation(pts[pts.lastIndex - 1], pts.peek(), p) != 2) {
+        while (pts.size > 1 && orientation(pts[pts.lastIndex - 1], pts.peek(), p) != Orientation.COUNTERCLOCKWISE) {
             pts.pop()
         }
         pts.push(p)
@@ -181,16 +185,15 @@ fun convexHull(points: List<Point>): List<Point> {
     return pts.toList()
 }
 
-fun angle(a: Segment, b: Segment): Double {
-    val angle =
-        PI - (atan2(b.end.y - b.begin.y, b.end.x - b.begin.x) - atan2(a.end.y - a.begin.y, a.end.x - a.begin.x))
-    return (angle % (2 * PI))
+fun angle(b: Segment, a: Segment): Double {
+    val angle = (atan2(b.end.y - b.begin.y, b.end.x - b.begin.x) - atan2(a.end.y - a.begin.y, a.end.x - a.begin.x))
+    return if (angle < 0) angle + 2 * PI else angle
 }
 
 fun List<Point>.nextIdx(i: Int) = (i + 1) % this.size
 fun List<Point>.next(i: Int) = this[this.nextIdx(i)]
 
-infix fun Double.equalsAccuracy(other: Double): Boolean = abs(this - other) <= min(Math.ulp(this), Math.ulp(other))
+infix fun Double.equalsAccuracy(other: Double): Boolean = abs(this - other) <= Math.ulp(max(this, other))
 
 fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
 
@@ -199,7 +202,7 @@ fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
     var j = 1
 
     while (angle(
-            Segment(convexHull[i], convexHull.next(i)),
+            Segment(convexHull.next(i), convexHull[i]),
             Segment(convexHull[j], convexHull.next(j))
         ) < PI
     ) {
@@ -211,7 +214,7 @@ fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
 
     while (j != 1) {
         val ang = 2 * PI - angle(
-            Segment(convexHull[i], convexHull.next(i)),
+            Segment(convexHull.next(i), convexHull[i]),
             Segment(convexHull[j], convexHull.next(j))
         )
 
