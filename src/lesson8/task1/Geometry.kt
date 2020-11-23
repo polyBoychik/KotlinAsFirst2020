@@ -153,7 +153,15 @@ fun convexHull(points: List<Point>): List<Point> {
     // Сортировка точек по полярному углу
     val sorted = points.minus(p0).sortedWith(Comparator { p1: Point, p2: Point ->
         return@Comparator when (orientation(p0, p1, p2)) {
-            0 -> if (p0.distance(p2) >= p0.distance(p1)) -1 else 1
+            0 -> {
+                val dif = p0.distance(p2) - p0.distance(p1)
+                return@Comparator when {
+                    dif > 0.0 -> -1
+                    dif equalsAccuracy 0.0 -> 0
+                    else -> 1
+                }
+            }
+
             2 -> -1
             else -> 1
         }
