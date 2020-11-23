@@ -157,7 +157,7 @@ fun convexHull(points: List<Point>): List<Point> {
                 val dif = p0.distance(p2) - p0.distance(p1)
                 return@Comparator when {
                     dif > 0.0 -> -1
-                    dif equalsAccuracy 0.0 -> 0
+                    dif == 0.0 -> 0
                     else -> 1
                 }
             }
