@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Test
 import java.lang.Math.ulp
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.sqrt
+import kotlin.system.exitProcess
 
 class Tests {
     @Test
@@ -224,31 +226,11 @@ class Tests {
         )
     }
 
-    @Test
-    fun angle() {
-        assertEquals(
-            PI / 4,
-            angle(Segment(Point(5.0, 0.0), Point(-5.0, 0.0)), Segment(Point(5.0, 0.0), Point(0.0, 5.0)))
-        )
-
-        assertEquals(
-            2 * PI - PI / 4,
-            angle(Segment(Point(5.0, 0.0), Point(-5.0, 0.0)), Segment(Point(0.0, 5.0), Point(-5.0, 0.0)))
-        )
-
-        assertEquals(
-            PI / 2,
-            angle(Segment(Point(0.0, 5.0), Point(5.0, 0.0)), Segment(Point(0.0, 5.0), Point(-5.0, 0.0)))
-        )
-        assertEquals(
-            0.0,
-            angle(Segment(Point(5.0, 0.0), Point(0.0, 5.0)), Segment(Point(5.0, 0.0), Point(0.0, 5.0)))
-        )
-    }
 
     @Test
     @Tag("3")
     fun diameter() {
+
         val p1 = Point(0.0, 0.0)
         val p2 = Point(1.0, 4.0)
         val p3 = Point(-2.0, 2.0)
