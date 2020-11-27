@@ -211,15 +211,15 @@ fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
 
     val stop = i
 
-    var offsetX = convexHull.next(j).x - convexHull.next(i).x
-    var offsetY = convexHull.next(j).y - convexHull.next(i).y
+    var offsetX = convexHull.next(j + 1).x - convexHull.next(i).x
+    var offsetY = convexHull.next(j + 1).y - convexHull.next(i).y
 
     do {
         while (!intersect(
                 Segment(convexHull[i], convexHull.next(i + 1)),
                 Segment(
-                    Point(convexHull.next(j - 1).x - offsetX, convexHull.next(j - 1).y - offsetY),
-                    Point(convexHull.next(j + 1).x - offsetX, convexHull.next(j + 1).y - offsetY)
+                    Point(convexHull.next(j).x - offsetX, convexHull.next(j).y - offsetY),
+                    Point(convexHull.next(j + 2).x - offsetX, convexHull.next(j + 2).y - offsetY)
                 )
             )
         ) {
@@ -230,10 +230,10 @@ fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
             offsetX = convexHull.next(j).x - convexHull.next(i).x
             offsetY = convexHull.next(j).y - convexHull.next(i).y
         }
-
+        offsetX = convexHull.next(j).x - convexHull.next(i).x
+        offsetY = convexHull.next(j).y - convexHull.next(i).y
         i = convexHull.nextIdx(i)
-        offsetX = convexHull.next(j).x - convexHull.next(i + 1).x
-        offsetY = convexHull.next(j).y - convexHull.next(i + 1).y
+
         antipodals.add(Pair(convexHull.next(i), convexHull[j]))
     } while (i != stop)
     return antipodals
