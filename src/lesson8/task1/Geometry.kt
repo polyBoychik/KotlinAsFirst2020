@@ -205,7 +205,6 @@ infix fun Double.equalsAccuracy(other: Double): Boolean = abs(this - other) <= M
 fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
     val antipodals = mutableListOf<Pair<Point, Point>>()
 
-
     // the most left
     var i = convexHull.indexOf(convexHull.minByOrNull { it.x }!!)
     // the most right
@@ -213,7 +212,26 @@ fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
 
     val stop = i
 
+    antipodals.add(Pair(convexHull[i], convexHull[j]))
+
     do {
+
+        // skip
+        while (intersect(
+                // Но как-то страшно оставлять такой вызов
+                Segment(
+                    Point((convexHull.prev(i).x - convexHull[i].x) / convexHull.prev(i).distance(convexHull[i]),
+                        (convexHull.prev(i).y - convexHull[i].y) / convexHull.prev(i).distance(convexHull[i])),
+                    Point((convexHull.next(i).x - convexHull[i].x) / convexHull.next(i).distance(convexHull[i]),
+                        (convexHull.next(i).y - convexHull[i].y) / convexHull.next(i).distance(convexHull[i]))),
+                Segment(
+                    Point((convexHull.prev(j).x - convexHull[j].x) / convexHull.prev(j).distance(convexHull[j]),
+                        (convexHull.prev(j).y - convexHull[j].y) / convexHull.prev(j).distance(convexHull[j])),
+                    Point((convexHull.next(j).x - convexHull[j].x) / convexHull.next(j).distance(convexHull[j]),
+                        (convexHull.next(j).y - convexHull[j].y) / convexHull.next(j).distance(convexHull[j])))
+            ))
+                j = convexHull.nextIdx(j)
+
         // а-ля нормализация отрезков относительно i, j точек
         while (!intersect(
                 // Но как-то страшно оставлять такой вызов
@@ -234,6 +252,7 @@ fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
 
         }
         i = convexHull.nextIdx(i)
+        j = convexHull.prevIdx(j)
     } while (i != stop)
 
     return antipodals
@@ -370,8 +389,6 @@ fun diameter(vararg points: Point): Segment {
     val antipodals = getAntipodalPoints(convexHull)
 
     val diameter = antipodals.maxByOrNull { it.first.distance(it.second) }!!
-
-    println("diameter: $diameter")
 
     return Segment(diameter.first, diameter.second)
 }
