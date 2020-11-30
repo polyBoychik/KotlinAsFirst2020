@@ -133,9 +133,11 @@ enum class Orientation {
 
 fun orientation(a: Point, b: Point, c: Point): Orientation {
     val value = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y)
-    if (value equalsAccuracy 0.0)
-        return Orientation.COLLINEAR
-    return if (value > 0) Orientation.CLOCKWISE else Orientation.COUNTERCLOCKWISE
+    return when {
+        value equalsAccuracy 0.0 -> Orientation.COLLINEAR
+        value > 0 -> Orientation.CLOCKWISE
+        else -> Orientation.COUNTERCLOCKWISE
+    }
 }
 
 /**
@@ -202,6 +204,18 @@ fun List<Point>.prev(i: Int) = this[this.prevIdx(i)]
 infix fun Double.equalsAccuracy(other: Double): Boolean = abs(this - other) <= Math.ulp(max(this, other))
 
 
+/**
+ * Возвращает нормализованный отрезок из точек (edge1, edge2), скомпенсированный относительно center
+ */
+fun getNormalizedSegmentOnEdges(center: Point, edge1: Point, edge2: Point): Segment {
+    val len1 = edge1.distance(center)
+    val p1 = Point((edge1.x - center.x) / len1, (edge1.y - center.y) / len1)
+    val len2 = edge2.distance(center)
+    val p2 = Point((edge2.x - center.x) / len2, (edge2.y - center.y) / len2)
+
+    return Segment(p1, p2)
+}
+
 fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
     val antipodals = mutableListOf<Pair<Point, Point>>()
 
@@ -212,39 +226,20 @@ fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
 
     val stop = i
 
-    antipodals.add(Pair(convexHull[i], convexHull[j]))
-
     do {
 
         // skip
         while (intersect(
-                // Но как-то страшно оставлять такой вызов
-                Segment(
-                    Point((convexHull.prev(i).x - convexHull[i].x) / convexHull.prev(i).distance(convexHull[i]),
-                        (convexHull.prev(i).y - convexHull[i].y) / convexHull.prev(i).distance(convexHull[i])),
-                    Point((convexHull.next(i).x - convexHull[i].x) / convexHull.next(i).distance(convexHull[i]),
-                        (convexHull.next(i).y - convexHull[i].y) / convexHull.next(i).distance(convexHull[i]))),
-                Segment(
-                    Point((convexHull.prev(j).x - convexHull[j].x) / convexHull.prev(j).distance(convexHull[j]),
-                        (convexHull.prev(j).y - convexHull[j].y) / convexHull.prev(j).distance(convexHull[j])),
-                    Point((convexHull.next(j).x - convexHull[j].x) / convexHull.next(j).distance(convexHull[j]),
-                        (convexHull.next(j).y - convexHull[j].y) / convexHull.next(j).distance(convexHull[j])))
-            ))
-                j = convexHull.nextIdx(j)
+                getNormalizedSegmentOnEdges(convexHull[i], convexHull.prev(i), convexHull.next(i)),
+                getNormalizedSegmentOnEdges(convexHull[j], convexHull.prev(j), convexHull.next(j))
+            )
+        )
+            j = convexHull.nextIdx(j)
 
-        // а-ля нормализация отрезков относительно i, j точек
+        // добавление противолежащих пар точек
         while (!intersect(
-                // Но как-то страшно оставлять такой вызов
-                Segment(
-                    Point((convexHull.prev(i).x - convexHull[i].x) / convexHull.prev(i).distance(convexHull[i]),
-                        (convexHull.prev(i).y - convexHull[i].y) / convexHull.prev(i).distance(convexHull[i])),
-                    Point((convexHull.next(i).x - convexHull[i].x) / convexHull.next(i).distance(convexHull[i]),
-                        (convexHull.next(i).y - convexHull[i].y) / convexHull.next(i).distance(convexHull[i]))),
-                Segment(
-                    Point((convexHull.prev(j).x - convexHull[j].x) / convexHull.prev(j).distance(convexHull[j]),
-                        (convexHull.prev(j).y - convexHull[j].y) / convexHull.prev(j).distance(convexHull[j])),
-                    Point((convexHull.next(j).x - convexHull[j].x) / convexHull.next(j).distance(convexHull[j]),
-                        (convexHull.next(j).y - convexHull[j].y) / convexHull.next(j).distance(convexHull[j])))
+                getNormalizedSegmentOnEdges(convexHull[i], convexHull.prev(i), convexHull.next(i)),
+                getNormalizedSegmentOnEdges(convexHull[j], convexHull.prev(j), convexHull.next(j))
             )
         ) {
             antipodals.add(Pair(convexHull[i], convexHull[j]))
@@ -257,121 +252,6 @@ fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
 
     return antipodals
 }
-
-//fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
-//    val antipodals = mutableListOf<Pair<Point, Point>>()
-//
-//    println("cohul: $convexHull")
-//
-//    var i = convexHull.prevIdx(convexHull.indexOf(convexHull.minByOrNull { it.x }!!))
-//    var j = convexHull.prevIdx(convexHull.indexOf(convexHull.maxByOrNull { it.x }!!))
-//
-//    println("min: $i, max: $j")
-//
-//    antipodals.add(Pair(convexHull.next(i), convexHull.next(j)))
-//
-//    var offsetX = convexHull.next(j + 1).x - convexHull.next(i).x
-//    var offsetY = convexHull.next(j + 1).y - convexHull.next(i).y
-//
-//    while (!intersect(
-//            Segment(convexHull[i], convexHull.next(i + 1)),
-//            Segment(
-//                Point(convexHull.next(j).x - offsetX, convexHull.next(j).y - offsetY),
-//                Point(convexHull.next(j + 2).x - offsetX, convexHull.next(j + 2).y - offsetY)
-//            )
-//        )
-//    ) {
-//        j = convexHull.nextIdx(j)
-//
-//        antipodals.add(Pair(convexHull.next(i), convexHull[j]))
-//
-//        offsetX = convexHull.next(j + 1).x - convexHull.next(i).x
-//        offsetY = convexHull.next(j + 1).y - convexHull.next(i).y
-//    }
-//
-//    println("after: $i, $j")
-//    antipodals.add(Pair(convexHull.next(i), convexHull.next(j)))
-//
-//    i = convexHull.nextIdx(i)
-//    val stop = i
-//
-//
-//    offsetX = convexHull.next(j).x - convexHull.next(i).x
-//    offsetY = convexHull.next(j).y - convexHull.next(i).y
-//
-//     do {
-//        while (!intersect(
-//                Segment(convexHull[i], convexHull.next(i + 1)),
-//                Segment(
-//                    Point(convexHull.next(j - 1).x - offsetX, convexHull.next(j - 1).y - offsetY),
-//                    Point(convexHull.next(j + 1).x - offsetX, convexHull.next(j + 1).y - offsetY)
-//                )
-//            )
-//        ) {
-//            j = convexHull.nextIdx(j)
-//
-//            antipodals.add(Pair(convexHull.next(i), convexHull[j]))
-//
-//            offsetX = convexHull.next(j).x - convexHull.next(i).x
-//            offsetY = convexHull.next(j).y - convexHull.next(i).y
-//        }
-//
-//        i = convexHull.nextIdx(i)
-//        offsetX = convexHull.next(j).x - convexHull.next(i + 1).x
-//        offsetY = convexHull.next(j).y - convexHull.next(i + 1).y
-//        antipodals.add(Pair(convexHull.next(i), convexHull[j]))
-//    } while (i != stop)
-//    return antipodals
-//}
-
-// TRASH. DO NOT SEE
-//fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
-//    println("hull: $convexHull")
-//
-//    val antipodals = mutableListOf<Pair<Point, Point>>()
-//    var i = 0
-//    var j = 1
-//
-//    while (angle(
-//            Segment(convexHull.next(i), convexHull[i]),
-//            Segment(convexHull[j], convexHull.next(j))
-//        ) < PI
-//    ) {
-//        j = convexHull.nextIdx(j)
-//    }
-//
-//    antipodals.add(Pair(convexHull[i], convexHull[j]))
-//
-//
-//    while (j != 1) {
-//        val ang = angle(
-//            Segment(convexHull.next(i), convexHull[i]),
-//            Segment(convexHull[j], convexHull.next(j))
-//        )
-//
-//        when {
-//            ang equalsAccuracy PI -> {
-//                val a = convexHull.nextIdx(i)
-//                val b = convexHull.nextIdx(j)
-//                antipodals.add(Pair(convexHull[a], convexHull[j]))
-//                antipodals.add(Pair(convexHull[i], convexHull[b]))
-//                antipodals.add(Pair(convexHull[a], convexHull[b]))
-//
-//                i = convexHull.nextIdx(i)
-//                j = convexHull.nextIdx(j)
-//            }
-//            ang < PI -> {
-//                antipodals.add(Pair(convexHull.next(i), convexHull[j]))
-//                i = convexHull.nextIdx(i)
-//            }
-//            else -> {
-//                antipodals.add(Pair(convexHull[i], convexHull.next(j)))
-//                j = convexHull.nextIdx(j)
-//            }
-//        }
-//    }
-//    return antipodals
-//}
 
 /**
  * Средняя (3 балла)
