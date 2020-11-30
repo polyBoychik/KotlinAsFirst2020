@@ -13,6 +13,12 @@ import kotlin.math.*
  * Точка на плоскости
  */
 data class Point(val x: Double, val y: Double) {
+
+    /**
+     * Возвращает квадрат расстояния между данной и other точками
+     */
+    fun squareDistance(other: Point) = sqr(x - other.x) + sqr(y - other.y)
+
     /**
      * Пример
      *
@@ -87,7 +93,7 @@ data class Circle(val center: Point, val radius: Double) {
      *
      * Вернуть true, если и только если окружность содержит данную точку НА себе или ВНУТРИ себя
      */
-    fun contains(p: Point): Boolean = center.distance(p) <= radius
+    fun contains(p: Point): Boolean = center.distance(p) < radius || center.distance(p) equalsAccuracy radius
 
     /**
      * Возвращает true, если окружность содержит все точки points, иначе возвращает false
@@ -415,16 +421,17 @@ fun findNearestCirclePair(vararg circles: Circle): Pair<Circle, Circle> {
  */
 fun circleByThreePoints(a: Point, b: Point, c: Point): Circle {
     // equation: p1 * x^2 + p1 * y^2 + p2 * x + p3 * y + p4
+    val origin = Point(0.0, 0.0)
 
     val p1 = a.x * (b.y - c.y) - a.y * (b.x - c.x) + b.x * c.y - c.x * b.y
-    val p2 =
-        (a.x * a.x + a.y * a.y) * (c.y - b.y) + (b.x * b.x + b.y * b.y) * (a.y - c.y) + (c.x * c.x + c.y * c.y) * (b.y - a.y)
-    val p3 =
-        (a.x * a.x + a.y * a.y) * (b.x - c.x) + (b.x * b.x + b.y * b.y) * (c.x - a.x) + (c.x * c.x + c.y * c.y) * (a.x - b.x)
-    val p4 =
-        (a.x * a.x + a.y * a.y) * (c.x * b.y - b.x * c.y) + (b.x * b.x + b.y * b.y) * (a.x * c.y - c.x * a.y) + (c.x * c.x + c.y * c.y) * (b.x * a.y - a.x * b.y)
+    val p2 = a.squareDistance(origin) * (c.y - b.y) + b.squareDistance(origin) * (a.y - c.y) +
+            c.squareDistance(origin) * (b.y - a.y)
+    val p3 = a.squareDistance(origin) * (b.x - c.x) + b.squareDistance(origin) * (c.x - a.x) +
+            c.squareDistance(origin) * (a.x - b.x)
 
-    return Circle(Point(-p2 / (2 * p1), -p3 / (2 * p1)), sqrt((sqr(p2) + sqr(p3) - 4 * p1 * p4) / sqr(p1)) / 2)
+    val center = Point(-p2 / (2 * p1), -p3 / (2 * p1))
+
+    return Circle(center, center.distance(a))
 }
 
 /**
@@ -449,19 +456,18 @@ fun minContainingCircle(vararg points: Point): Circle {
         return Circle(meanPoint(pts.toList()), pts[0].distance(pts[1]) / 2)
 
     var circle = circleByDiameter(diameter(*pts.toTypedArray()))
-    var minCircle = if (circle.containsAll(pts))
-        circle
-    else
-        Circle(Point(0.0, 0.0), Double.POSITIVE_INFINITY)
+
+    if (circle.containsAll(pts))
+        return circle
+
+    var minCircle = Circle(Point(0.0, 0.0), Double.POSITIVE_INFINITY)
 
     for (i in pts.indices) {
         for (j in i + 1..pts.lastIndex) {
             for (k in j + 1..pts.lastIndex) {
-
-                if (!(lineByPoints(pts[i], pts[j]).angle equalsAccuracy lineByPoints(pts[j], pts[k]).angle)) {
-                    circle = circleByThreePoints(pts[i], pts[j], pts[k])
-                    if (circle.containsAll(pts) && circle.radius < minCircle.radius)
-                        minCircle = circle
+                circle = circleByThreePoints(pts[i], pts[j], pts[k])
+                if (circle.containsAll(pts) && circle.radius < minCircle.radius) {
+                    minCircle = circle
                 }
             }
         }
