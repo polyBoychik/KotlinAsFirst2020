@@ -131,6 +131,12 @@ enum class Orientation {
     COLLINEAR, CLOCKWISE, COUNTERCLOCKWISE
 }
 
+/**
+ * Возвращает положение c относительно a и b:
+ * COUNTERCLOCKWISE, Если c лежит слева от прямой, образованной отрезком [a, b]
+ * CLOCKWISE, Если c лежит справа от прямой, образованной отрезком [a, b]
+ * COLLINEAR, Если c лежит на одной прямой с точками a и b
+ */
 fun orientation(a: Point, b: Point, c: Point): Orientation {
     val value = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y)
     return when {
@@ -185,7 +191,6 @@ fun convexHull(points: List<Point>): List<Point> {
     return pts.toList()
 }
 
-
 fun area(a: Point, b: Point, c: Point) = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
 
 fun intersect1(a: Double, b: Double, c: Double, d: Double) = max(min(a, b), min(c, d)) <= min(max(a, b), max(c, d))
@@ -193,7 +198,7 @@ fun intersect1(a: Double, b: Double, c: Double, d: Double) = max(min(a, b), min(
 fun intersect(a: Segment, b: Segment) = intersect1(a.begin.x, a.end.x, b.begin.x, b.end.x)
         && intersect1(a.begin.y, a.end.y, b.begin.y, b.end.y)
         && area(a.begin, a.end, b.begin) * area(a.begin, a.end, b.end) <= 0
-        && area(b.begin, b.end, a.begin) * area(b.begin, b.end, a.end) <= 0;
+        && area(b.begin, b.end, a.begin) * area(b.begin, b.end, a.end) <= 0
 
 
 fun List<Point>.nextIdx(i: Int) = (i + 1) % this.size
@@ -216,19 +221,19 @@ fun getNormalizedSegmentOnEdges(center: Point, edge1: Point, edge2: Point): Segm
     return Segment(p1, p2)
 }
 
+/**
+ * Возвращает список пар точек, являющихся противоположными в МВО convexHull
+ */
 fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
     val antipodals = mutableListOf<Pair<Point, Point>>()
 
-    // the most left
-    var i = convexHull.indexOf(convexHull.minByOrNull { it.x }!!)
-    // the most right
-    var j = convexHull.indexOf(convexHull.maxByOrNull { it.x }!!)
+    var i = 0
+    var j = 1
 
     val stop = i
 
     do {
-
-        // skip
+        // skip until non-antipodal
         while (intersect(
                 getNormalizedSegmentOnEdges(convexHull[i], convexHull.prev(i), convexHull.next(i)),
                 getNormalizedSegmentOnEdges(convexHull[j], convexHull.prev(j), convexHull.next(j))
@@ -236,7 +241,7 @@ fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
         )
             j = convexHull.nextIdx(j)
 
-        // добавление противолежащих пар точек
+        // Add each antipodal pair
         while (!intersect(
                 getNormalizedSegmentOnEdges(convexHull[i], convexHull.prev(i), convexHull.next(i)),
                 getNormalizedSegmentOnEdges(convexHull[j], convexHull.prev(j), convexHull.next(j))
@@ -247,6 +252,7 @@ fun getAntipodalPoints(convexHull: List<Point>): List<Pair<Point, Point>> {
 
         }
         i = convexHull.nextIdx(i)
+        // Decrement to check the same j-point with new i-point
         j = convexHull.prevIdx(j)
     } while (i != stop)
 
@@ -309,8 +315,6 @@ class Line private constructor(val b: Double, val angle: Double) {
         val thisCos = cos(this.angle)
         val otherSin = sin(other.angle)
         val otherCos = cos(other.angle)
-
-        require(!(this.angle == PI / 2 && other.angle == PI / 2)) { "There are infinite count of points" }
 
         // solution of the first equation
         val x = (-this.b * otherCos + other.b * thisCos) / (thisSin * otherCos - otherSin * thisCos)
@@ -400,10 +404,6 @@ fun findNearestCirclePair(vararg circles: Circle): Pair<Circle, Circle> {
     return Pair(firstCircle, secondCircle)
 }
 
-// center rotation
-fun rotatedLine(a: Point, b: Point, angle: Double): Line =
-    Line(meanPoint(listOf(a, b)), (angleBetweenPointsAndOx(a, b) + PI + angle) % PI)
-
 /**
  * Сложная (5 баллов)
  *
@@ -414,12 +414,17 @@ fun rotatedLine(a: Point, b: Point, angle: Double): Line =
  * построить окружность, описанную вокруг треугольника - эквивалентная задача).
  */
 fun circleByThreePoints(a: Point, b: Point, c: Point): Circle {
-    val firstLine = rotatedLine(a, b, PI / 2)
-    val secondLine = rotatedLine(b, c, PI / 2)
+    // equation: p1 * x^2 + p1 * y^2 + p2 * x + p3 * y + p4
 
-    val center = firstLine.crossPoint(secondLine)
+    val p1 = a.x * (b.y - c.y) - a.y * (b.x - c.x) + b.x * c.y - c.x * b.y
+    val p2 =
+        (a.x * a.x + a.y * a.y) * (c.y - b.y) + (b.x * b.x + b.y * b.y) * (a.y - c.y) + (c.x * c.x + c.y * c.y) * (b.y - a.y)
+    val p3 =
+        (a.x * a.x + a.y * a.y) * (b.x - c.x) + (b.x * b.x + b.y * b.y) * (c.x - a.x) + (c.x * c.x + c.y * c.y) * (a.x - b.x)
+    val p4 =
+        (a.x * a.x + a.y * a.y) * (c.x * b.y - b.x * c.y) + (b.x * b.x + b.y * b.y) * (a.x * c.y - c.x * a.y) + (c.x * c.x + c.y * c.y) * (b.x * a.y - a.x * b.y)
 
-    return Circle(center, center.distance(a))
+    return Circle(Point(-p2 / (2 * p1), -p3 / (2 * p1)), sqrt((sqr(p2) + sqr(p3) - 4 * p1 * p4) / sqr(p1)) / 2)
 }
 
 /**
@@ -442,8 +447,6 @@ fun minContainingCircle(vararg points: Point): Circle {
         return Circle(pts[0], 0.0)
     if (pts.size == 2)
         return Circle(meanPoint(pts.toList()), pts[0].distance(pts[1]) / 2)
-
-//    val convexHull = convexHull(pts.toList())
 
     var circle = circleByDiameter(diameter(*pts.toTypedArray()))
     var minCircle = if (circle.containsAll(pts))
