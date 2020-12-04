@@ -39,6 +39,8 @@ data class HexPoint(val x: Int, val y: Int) {
         fun subtract(other: Cube): Cube = Cube(x - other.x, y - other.y, z - other.z)
 
         fun toAxial() = HexPoint(x, y)
+
+        fun distance(other: Cube) = maxOf(abs(x - other.x), abs(y - other.y), abs(z - other.z))
     }
 
     fun toCubeCoordinates(): Cube {
@@ -75,12 +77,7 @@ data class HexPoint(val x: Int, val y: Int) {
      * Расстояние вычисляется как число единичных отрезков в пути между двумя гексами.
      * Например, путь межу гексами 16 и 41 (см. выше) может проходить через 25, 34, 43 и 42 и имеет длину 5.
      */
-    fun distance(other: HexPoint): Int {
-        val thisCube = toCubeCoordinates()
-        val otherCube = other.toCubeCoordinates()
-
-        return maxOf(abs(thisCube.x - otherCube.x), abs(thisCube.y - otherCube.y), abs(thisCube.z - otherCube.z))
-    }
+    fun distance(other: HexPoint) = toCubeCoordinates().distance(other.toCubeCoordinates())
 
     override fun toString(): String = "$y.$x"
 }
@@ -128,7 +125,7 @@ class HexSegment(val begin: HexPoint, val end: HexPoint) {
      */
     fun isValid(): Boolean {
         val difCube = end.toCubeCoordinates().subtract(begin.toCubeCoordinates())
-        return difCube.x == 0 || difCube.y == 0 || difCube.z == 0
+        return (difCube.x == 0 || difCube.y == 0 || difCube.z == 0) && (difCube.x != 0 || difCube.y != 0 || difCube.z != 0)
     }
 
     /**
