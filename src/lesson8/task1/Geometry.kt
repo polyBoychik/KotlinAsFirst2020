@@ -98,7 +98,7 @@ data class Circle(val center: Point, val radius: Double) {
     /**
      * Возвращает true, если окружность содержит все точки points, иначе возвращает false
      */
-    fun containsAll(points: List<Point>): Boolean {
+    fun containsAll(points: Collection<Point>): Boolean {
         for (p in points)
             if (!this.contains(p))
                 return false
@@ -276,11 +276,7 @@ fun diameter(vararg points: Point): Segment {
     if (points.toSet().size < 2)
         throw IllegalArgumentException("Not enough points")
 
-    val convexHull = convexHull(points.toList())
-
-    val antipodals = getAntipodalPoints(convexHull)
-
-    val diameter = antipodals.maxByOrNull { it.first.distance(it.second) }!!
+    val diameter = getAntipodalPoints(convexHull(points.toList())).maxByOrNull { it.first.squareDistance(it.second) }!!
 
     return Segment(diameter.first, diameter.second)
 }
@@ -448,7 +444,8 @@ fun circleByThreePoints(a: Point, b: Point, c: Point): Circle {
 fun minContainingCircle(vararg points: Point): Circle {
     if (points.isEmpty()) throw IllegalArgumentException("Parameter's list hasn't to be empty")
 
-    val pts = points.toSet().toList()
+    val ptsSet = points.toSet().toMutableSet()
+    val pts = ptsSet.toList()
 
     if (pts.size == 1)
         return Circle(pts[0], 0.0)
@@ -464,12 +461,12 @@ fun minContainingCircle(vararg points: Point): Circle {
         for (j in i + 1..pts.lastIndex) {
             for (k in j + 1..pts.lastIndex) {
                 circle = circleByThreePoints(pts[i], pts[j], pts[k])
-                if (circle.containsAll(
-                        pts.minus(pts[i]).minus(pts[j]).minus(pts[k])
-                    ) && circle.radius < minCircle.radius
-                ) {
+                // Remove reference points of circle to avoid accuracy loss
+                ptsSet.remove(pts[i]); ptsSet.remove(pts[j]); ptsSet.remove(pts[k])
+                if (circle.containsAll(ptsSet) && circle.radius < minCircle.radius) {
                     minCircle = circle
                 }
+                ptsSet.add(pts[i]); ptsSet.add(pts[j]); ptsSet.add(pts[k])
             }
         }
     }
