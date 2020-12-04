@@ -3,11 +3,11 @@
 package lesson8.task1
 
 import kotlin.math.abs
-import kotlin.math.max
 
 /**
  * Точка (гекс) на шестиугольной сетке.
  * Координаты заданы как в примере (первая цифра - y, вторая цифра - x)
+ * Flat-topped orientation
  *
  *       60  61  62  63  64  65
  *     50  51  52  53  54  55  56
@@ -32,6 +32,19 @@ import kotlin.math.max
  *   https://www.redblobgames.com/grids/hexagons/
  */
 data class HexPoint(val x: Int, val y: Int) {
+
+    data class Cube(val x: Int, val y: Int, val z: Int)
+
+    fun toCubeCoordinates(): Cube {
+        val cubeX = x
+        val cubeY = y
+        val cubeZ = x + y
+//        val cubeX = y
+//        val cubeZ = x + (y - (y and 1)) / 2
+//        val cubeY = -cubeX - cubeZ
+        return Cube(cubeX, cubeY, cubeZ)
+    }
+
     /**
      * Средняя (3 балла)
      *
@@ -39,7 +52,12 @@ data class HexPoint(val x: Int, val y: Int) {
      * Расстояние вычисляется как число единичных отрезков в пути между двумя гексами.
      * Например, путь межу гексами 16 и 41 (см. выше) может проходить через 25, 34, 43 и 42 и имеет длину 5.
      */
-    fun distance(other: HexPoint): Int = max(abs(this.x - other.x), abs(this.y - other.y))
+    fun distance(other: HexPoint): Int {
+        val thisCube = toCubeCoordinates()
+        val otherCube = other.toCubeCoordinates()
+
+        return maxOf(abs(thisCube.x - otherCube.x), abs(thisCube.y - otherCube.y), abs(thisCube.z - otherCube.z))
+    }
 
     override fun toString(): String = "$y.$x"
 }

@@ -446,14 +446,12 @@ fun circleByThreePoints(a: Point, b: Point, c: Point): Circle {
  * соединяющий две самые удалённые точки в данном множестве.
  */
 fun minContainingCircle(vararg points: Point): Circle {
-    if (points.isEmpty()) throw IllegalArgumentException("Parameter's list hasn't be empty")
+    if (points.isEmpty()) throw IllegalArgumentException("Parameter's list hasn't to be empty")
 
     val pts = points.toSet().toList()
 
     if (pts.size == 1)
         return Circle(pts[0], 0.0)
-    if (pts.size == 2)
-        return Circle(meanPoint(pts.toList()), pts[0].distance(pts[1]) / 2)
 
     var circle = circleByDiameter(diameter(*pts.toTypedArray()))
 
@@ -463,8 +461,8 @@ fun minContainingCircle(vararg points: Point): Circle {
     var minCircle = Circle(Point(0.0, 0.0), Double.POSITIVE_INFINITY)
 
     for (i in pts.indices) {
-        for (j in i + 1..pts.lastIndex) {
-            for (k in j + 1..pts.lastIndex) {
+        for (j in pts.indices) {
+            for (k in pts.indices) {
                 circle = circleByThreePoints(pts[i], pts[j], pts[k])
                 if (circle.containsAll(pts) && circle.radius < minCircle.radius) {
                     minCircle = circle
