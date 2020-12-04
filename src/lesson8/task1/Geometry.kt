@@ -450,10 +450,13 @@ fun minContainingCircle(vararg points: Point): Circle {
     if (pts.size == 1)
         return Circle(pts[0], 0.0)
 
-    var circle = circleByDiameter(diameter(*pts.toTypedArray()))
-
-    if (circle.containsAll(pts))
+    val diameter = diameter(*pts.toTypedArray())
+    var circle = circleByDiameter(diameter)
+    // Remove reference points of circle to avoid accuracy loss
+    ptsSet.remove(diameter.begin); ptsSet.remove(diameter.end)
+    if (circle.containsAll(ptsSet))
         return circle
+    ptsSet.add(diameter.begin); ptsSet.add(diameter.end)
 
     var minCircle = Circle(Point(0.0, 0.0), Double.POSITIVE_INFINITY)
 
