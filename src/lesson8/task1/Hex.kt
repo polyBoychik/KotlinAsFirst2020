@@ -3,6 +3,8 @@
 package lesson8.task1
 
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Точка (гекс) на шестиугольной сетке.
@@ -33,16 +35,37 @@ import kotlin.math.abs
  */
 data class HexPoint(val x: Int, val y: Int) {
 
-    data class Cube(val x: Int, val y: Int, val z: Int)
+    data class Cube(val x: Int, val y: Int, val z: Int) {
+        fun subtract(other: Cube): Cube = Cube(x - other.x, y - other.y, z - other.z)
+
+        fun toAxial() = HexPoint(x, y)
+    }
 
     fun toCubeCoordinates(): Cube {
         val cubeX = x
         val cubeY = y
         val cubeZ = x + y
-//        val cubeX = y
-//        val cubeZ = x + (y - (y and 1)) / 2
-//        val cubeY = -cubeX - cubeZ
         return Cube(cubeX, cubeY, cubeZ)
+    }
+
+    fun getNeighbours() = listOf(
+        HexPoint(x + 1, y),
+        HexPoint(x - 1, y),
+        HexPoint(x, y + 1),
+        HexPoint(x, y - 1),
+        HexPoint(x + 1, y - 1),
+        HexPoint(x - 1, y + 1),
+    )
+
+    fun getNearerNeighbour(to: HexPoint): HexPoint {
+        val dist = distance(to)
+
+        for (neighbour in getNeighbours()) {
+            if (neighbour.distance(to) < dist)
+                return neighbour
+        }
+
+        return to
     }
 
     /**
@@ -81,14 +104,14 @@ data class Hexagon(val center: HexPoint, val radius: Int) {
      * (расстояние между точками 32 и 24)
      */
     fun distance(other: Hexagon): Int =
-        this.center.distance(other.center) - this.radius - other.radius
+        max(0, this.center.distance(other.center) - this.radius - other.radius)
 
     /**
      * Тривиальная (1 балл)
      *
      * Вернуть true, если заданная точка находится внутри или на границе шестиугольника
      */
-    fun contains(point: HexPoint): Boolean = TODO()
+    fun contains(point: HexPoint): Boolean = distance(Hexagon(point, 0)) == 0
 }
 
 /**
@@ -103,7 +126,10 @@ class HexSegment(val begin: HexPoint, val end: HexPoint) {
      * Такими являются, например, отрезок 30-34 (горизонталь), 13-63 (прямая диагональ) или 51-24 (косая диагональ).
      * А, например, 13-26 не является "правильным" отрезком.
      */
-    fun isValid(): Boolean = TODO()
+    fun isValid(): Boolean {
+        val difCube = end.toCubeCoordinates().subtract(begin.toCubeCoordinates())
+        return difCube.x == 0 || difCube.y == 0 || difCube.z == 0
+    }
 
     /**
      * Средняя (3 балла)
@@ -112,7 +138,21 @@ class HexSegment(val begin: HexPoint, val end: HexPoint) {
      * Для "правильного" отрезка выбирается одно из первых шести направлений,
      * для "неправильного" -- INCORRECT.
      */
-    fun direction(): Direction = TODO()
+    fun direction(): Direction {
+        val dif = end.toCubeCoordinates().subtract(begin.toCubeCoordinates())
+        return when {
+            dif.x > 0 && dif.y == 0 -> Direction.RIGHT
+            dif.x < 0 && dif.y == 0 -> Direction.LEFT
+
+            dif.y > 0 && dif.x == 0 -> Direction.UP_RIGHT
+            dif.y < 0 && dif.x == 0 -> Direction.DOWN_LEFT
+
+            dif.x > 0 && dif.z == 0 -> Direction.DOWN_RIGHT
+            dif.x < 0 && dif.z == 0 -> Direction.UP_LEFT
+
+            else -> Direction.INCORRECT
+        }
+    }
 
     override fun equals(other: Any?) =
         other is HexSegment && (begin == other.begin && end == other.end || end == other.begin && begin == other.end)
@@ -141,7 +181,15 @@ enum class Direction {
      * Вернуть направление, противоположное данному.
      * Для INCORRECT вернуть INCORRECT
      */
-    fun opposite(): Direction = TODO()
+    fun opposite(): Direction = when (this) {
+        RIGHT -> LEFT
+        UP_RIGHT -> DOWN_LEFT
+        UP_LEFT -> DOWN_RIGHT
+        LEFT -> RIGHT
+        DOWN_LEFT -> UP_RIGHT
+        DOWN_RIGHT -> UP_LEFT
+        INCORRECT -> INCORRECT
+    }
 
     /**
      * Средняя (3 балла)
@@ -153,7 +201,12 @@ enum class Direction {
      * Для направления INCORRECT бросить исключение IllegalArgumentException.
      * При решении этой задачи попробуйте обойтись без перечисления всех семи вариантов.
      */
-    fun next(): Direction = TODO()
+    fun next(): Direction {
+        if (this == INCORRECT)
+            throw IllegalArgumentException("Invalid direction")
+
+        return if (this == DOWN_RIGHT) RIGHT else values()[this.ordinal + 1]
+    }
 
     /**
      * Простая (2 балла)
@@ -161,7 +214,7 @@ enum class Direction {
      * Вернуть true, если данное направление совпадает с other или противоположно ему.
      * INCORRECT не параллельно никакому направлению, в том числе другому INCORRECT.
      */
-    fun isParallel(other: Direction): Boolean = TODO()
+    fun isParallel(other: Direction): Boolean = this != INCORRECT && (this == other || this == other.opposite())
 }
 
 /**
@@ -177,7 +230,27 @@ enum class Direction {
  * 35, direction = UP_LEFT, distance = 2 --> 53
  * 45, direction = DOWN_LEFT, distance = 4 --> 05
  */
-fun HexPoint.move(direction: Direction, distance: Int): HexPoint = TODO()
+fun HexPoint.move(direction: Direction, distance: Int): HexPoint {
+    if (direction == Direction.INCORRECT)
+        throw IllegalArgumentException("Invalid direction")
+
+    if (distance == 0)
+        return this
+    val y = when (direction) {
+        Direction.UP_LEFT, Direction.UP_RIGHT -> this.y + distance
+        Direction.DOWN_RIGHT, Direction.DOWN_LEFT -> this.y - distance
+        else -> this.y
+    }
+
+    val x = when (direction) {
+        Direction.RIGHT, Direction.DOWN_RIGHT -> this.x + distance
+        Direction.LEFT, Direction.UP_LEFT -> this.x - distance
+        else -> this.x
+    }
+
+    return HexPoint(x, y)
+}
+
 
 /**
  * Сложная (5 баллов)
@@ -197,7 +270,18 @@ fun HexPoint.move(direction: Direction, distance: Int): HexPoint = TODO()
  *       HexPoint(y = 5, x = 3)
  *     )
  */
-fun pathBetweenHexes(from: HexPoint, to: HexPoint): List<HexPoint> = TODO()
+fun pathBetweenHexes(from: HexPoint, to: HexPoint): List<HexPoint> {
+    val path = mutableListOf(from)
+    var dist = from.distance(to)
+    var current = from
+
+    while (dist > 0) {
+        current = current.getNearerNeighbour(to)
+        path.add(current)
+        dist = current.distance(to)
+    }
+    return path
+}
 
 /**
  * Очень сложная (20 баллов)
@@ -214,7 +298,12 @@ fun pathBetweenHexes(from: HexPoint, to: HexPoint): List<HexPoint> = TODO()
  *
  * Если все три точки совпадают, вернуть шестиугольник нулевого радиуса с центром в данной точке.
  */
-fun hexagonByThreePoints(a: HexPoint, b: HexPoint, c: HexPoint): Hexagon? = TODO()
+fun hexagonByThreePoints(a: HexPoint, b: HexPoint, c: HexPoint): Hexagon? {
+
+    // Thinking
+
+    return Hexagon(a, 0)
+}
 
 /**
  * Очень сложная (20 баллов)

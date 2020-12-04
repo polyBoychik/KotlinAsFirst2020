@@ -461,10 +461,13 @@ fun minContainingCircle(vararg points: Point): Circle {
     var minCircle = Circle(Point(0.0, 0.0), Double.POSITIVE_INFINITY)
 
     for (i in pts.indices) {
-        for (j in pts.indices) {
-            for (k in pts.indices) {
+        for (j in i + 1..pts.lastIndex) {
+            for (k in j + 1..pts.lastIndex) {
                 circle = circleByThreePoints(pts[i], pts[j], pts[k])
-                if (circle.containsAll(pts) && circle.radius < minCircle.radius) {
+                if (circle.containsAll(
+                        pts.minus(pts[i]).minus(pts[j]).minus(pts[k])
+                    ) && circle.radius < minCircle.radius
+                ) {
                     minCircle = circle
                 }
             }

@@ -265,7 +265,7 @@ Basic, Ruby, Swift.
                 '#' to "B"
             ), "temp.txt"
         )
-        assertFileContent("temp.txt", "\r=i[33~\"!se")
+        assertFileContent("temp.txt", "=i[33~\"!se")
         File("temp.txt").delete()
     }
 
