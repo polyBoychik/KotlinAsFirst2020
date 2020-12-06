@@ -453,10 +453,8 @@ fun minContainingCircle(vararg points: Point): Circle {
     val diameter = diameter(*pts.toTypedArray())
     var circle = circleByDiameter(diameter)
     // Remove reference points of circle to avoid accuracy loss
-    ptsSet.remove(diameter.begin); ptsSet.remove(diameter.end)
-    if (circle.containsAll(ptsSet))
+    if (circle.containsAll(ptsSet - setOf(diameter.begin, diameter.end)))
         return circle
-    ptsSet.add(diameter.begin); ptsSet.add(diameter.end)
 
     var minCircle = Circle(Point(0.0, 0.0), Double.POSITIVE_INFINITY)
 
@@ -465,11 +463,9 @@ fun minContainingCircle(vararg points: Point): Circle {
             for (k in j + 1..pts.lastIndex) {
                 circle = circleByThreePoints(pts[i], pts[j], pts[k])
                 // Remove reference points of circle to avoid accuracy loss
-                ptsSet.remove(pts[i]); ptsSet.remove(pts[j]); ptsSet.remove(pts[k])
-                if (circle.containsAll(ptsSet) && circle.radius < minCircle.radius) {
+                if (circle.containsAll(ptsSet - setOf(pts[i], pts[j], pts[k])) && circle.radius < minCircle.radius) {
                     minCircle = circle
                 }
-                ptsSet.add(pts[i]); ptsSet.add(pts[j]); ptsSet.add(pts[k])
             }
         }
     }
