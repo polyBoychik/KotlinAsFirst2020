@@ -47,6 +47,7 @@ class Tests {
         assertEquals(2, rookMoveNumber(square("g8"), square("f6")))
         assertEquals(1, rookMoveNumber(square("a8"), square("g8")))
         assertEquals(1, rookMoveNumber(square("h3"), square("h8")))
+        assertThrows(IllegalArgumentException::class.java) { rookMoveNumber(square("a0"), square("h8")) }
     }
 
     private fun List<Square>.assertRookTrajectory(start: Square, end: Square, length: Int) {
@@ -66,6 +67,7 @@ class Tests {
         assertEquals(listOf(square("g5")), rookTrajectory(square("g5"), square("g5")))
         rookTrajectory(square("c3"), square("h6")).assertRookTrajectory(square("c3"), square("h6"), 2)
         assertEquals(listOf(square("h2"), square("h7")), rookTrajectory(square("h2"), square("h7")))
+        assertEquals(listOf(square("a2"), square("h2")), rookTrajectory(square("a2"), square("h2")))
     }
 
     @Test
